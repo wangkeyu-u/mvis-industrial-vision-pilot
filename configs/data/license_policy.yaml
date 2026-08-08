@@ -1,0 +1,12 @@
+allow:
+  identifiers:
+    - cc0-1.0
+    - cc-by-4.0
+    - owned
+    - synthetic
+deny:
+  identifiers:
+    - unknown
+    - unlicensed
+    - all-rights-reserved-unapproved
+require_explicit_identifier: true

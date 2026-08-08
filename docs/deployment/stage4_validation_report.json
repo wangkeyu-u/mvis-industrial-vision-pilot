@@ -1,0 +1,150 @@
+{
+  "preflight": {
+    "api_schema_version": "1.0.0",
+    "can_serve": true,
+    "checks": [
+      {
+        "details": {
+          "path": "configs/service/default.yaml"
+        },
+        "name": "service_config",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "path": "configs/models/qwen3_vl_2b_mlx_4bit.json"
+        },
+        "name": "model_config",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "configured": "1.0.0",
+          "implemented": "1.0.0"
+        },
+        "name": "api_schema",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "free_mb": 272134.93,
+          "minimum_free_mb": 2048,
+          "path": "."
+        },
+        "name": "disk_budget",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "budget_mb": 12288,
+          "note": "process peak is preflight-only, not model inference peak",
+          "physical_memory_mb": 16384.0,
+          "process_peak_mb": 38.36
+        },
+        "name": "memory_budget",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "active_model": {
+            "adapter": "mock-compliance-v0",
+            "base": "mock-vlm-0",
+            "config_fingerprint": "0bfe91fccce8f56381f42bbb595ea39875f560f2f724b9e574effe5ec7b894be",
+            "model_fingerprint": "fdf1a056047586cbb8be2bc0132bfdbc5302b5ade82ad6a392610e33e677d274",
+            "model_id": "mock-compliance-v0",
+            "quantization": "none",
+            "ready": true,
+            "source": "built-in-test-double",
+            "state": "active",
+            "weight_hash": null
+          },
+          "runtime": {
+            "degraded": true,
+            "fallback_reason": "mlx_runtime_unavailable",
+            "requested_mode": "auto",
+            "selected_mode": "mock"
+          }
+        },
+        "name": "model_readiness",
+        "required": true,
+        "status": "degraded"
+      }
+    ],
+    "code_version": "stage-4-final",
+    "production_ready": false,
+    "report_type": "mvis_preflight",
+    "report_version": "1.0.0",
+    "runtime": {
+      "degraded": true,
+      "fallback_reason": "mlx_runtime_unavailable",
+      "requested_mode": "auto",
+      "selected_mode": "mock"
+    },
+    "service": "multimodal-vision-service",
+    "service_version": "0.1.0",
+    "status": "degraded",
+    "timestamp": "2026-08-08T03:09:00.045617+00:00"
+  },
+  "report_type": "mvis_stage4_validation",
+  "report_version": "1.0.0",
+  "stability": {
+    "api_schema_version": "1.0.0",
+    "code_version": "stage-4-final",
+    "performance_sample": {
+      "api_latency_ms": {
+        "count": 100,
+        "max": 3.0,
+        "mean": 0.03,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 0.0
+      },
+      "kpi_eligible": false,
+      "kpi_exclusion_reason": "mock_latency_is_not_real_model_kpi",
+      "memory_budget_mb": 12288,
+      "process_peak_memory_after_mb": 52.47,
+      "process_peak_memory_before_mb": 51.16,
+      "total_duration_ms": 20.375,
+      "wall_latency_ms": {
+        "count": 100,
+        "max": 3.757,
+        "mean": 0.2,
+        "min": 0.148,
+        "p50": 0.158,
+        "p95": 0.211
+      }
+    },
+    "report_type": "mvis_stability_sample",
+    "report_version": "1.0.0",
+    "runtime": {
+      "degraded": true,
+      "fallback_reason": "mlx_runtime_unavailable",
+      "requested_mode": "auto",
+      "selected_mode": "mock"
+    },
+    "service": "multimodal-vision-service",
+    "service_version": "0.1.0",
+    "stability": {
+      "error_counts": {},
+      "status_counts": {
+        "200": 100
+      },
+      "success_count": 100,
+      "success_rate": 1.0,
+      "unique_request_ids": 100
+    },
+    "timestamp": "2026-08-08T03:09:00.145172+00:00",
+    "workload": {
+      "concurrency": 1,
+      "image": "embedded_1x1_png",
+      "query": "fixed_compliant_probe",
+      "request_count": 100,
+      "transport": "in_process_asgi"
+    }
+  }
+}

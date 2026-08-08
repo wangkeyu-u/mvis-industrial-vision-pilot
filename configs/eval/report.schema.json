@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.mvis/schemas/evaluation-report-1.0.0.json",
+  "title": "MVIS offline evaluation report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "summary", "slice_metrics", "samples", "failure_cases"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "summary": {"$ref": "#/$defs/metrics"},
+    "slice_metrics": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/metrics"}
+    },
+    "samples": {"type": "array", "items": {"$ref": "#/$defs/sample"}},
+    "failure_cases": {"type": "array", "items": {"$ref": "#/$defs/sample"}}
+  },
+  "$defs": {
+    "metrics": {
+      "type": "object",
+      "required": [
+        "sample_count",
+        "localization_target_count",
+        "hard_negative_count",
+        "failure_case_count",
+        "macro_f1",
+        "acc_at_iou",
+        "json_schema_validity_rate",
+        "hard_negative_false_positive_rate",
+        "evidence_conclusion_consistency_rate"
+      ],
+      "properties": {
+        "sample_count": {"type": "integer", "minimum": 0},
+        "localization_target_count": {"type": "integer", "minimum": 0},
+        "hard_negative_count": {"type": "integer", "minimum": 0},
+        "failure_case_count": {"type": "integer", "minimum": 0},
+        "macro_f1": {"type": "number", "minimum": 0, "maximum": 1},
+        "acc_at_iou": {"type": "number", "minimum": 0, "maximum": 1},
+        "iou_threshold": {"type": "number", "minimum": 0, "maximum": 1},
+        "json_schema_validity_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "hard_negative_false_positive_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "evidence_conclusion_consistency_rate": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "sample": {
+      "type": "object",
+      "required": ["sample_id", "truth", "prediction", "metrics", "failure_codes"],
+      "properties": {
+        "sample_id": {"type": "string", "minLength": 1},
+        "truth": {"type": "object"},
+        "prediction": {"type": "object"},
+        "metrics": {"type": "object"},
+        "failure_codes": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

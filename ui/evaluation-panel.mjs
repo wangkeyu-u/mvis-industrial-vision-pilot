@@ -1,0 +1,330 @@
+import {
+  EvaluationImportError,
+  parseEvaluationFiles,
+  parseEvaluationPayload,
+} from "/src/client/evaluation-report.mjs";
+
+const ids = [
+  "toggle-evaluation", "evaluation-panel", "close-evaluation", "refresh-diagnostics",
+  "runtime-diagnostics", "evaluation-input", "select-evaluation", "load-evaluation-fixture",
+  "clear-evaluation", "evaluation-alert", "evaluation-empty", "evaluation-content",
+  "evaluation-watermark", "evaluation-source", "evaluation-provenance-detail",
+  "evaluation-truth-badge", "evaluation-acceptance", "evaluation-summary",
+  "evaluation-comparison", "evaluation-kpis", "evaluation-slices", "evaluation-failures",
+];
+
+function elementMap() {
+  return Object.fromEntries(ids.map((id) => [id.replaceAll("-", "_"), document.getElementById(id)]));
+}
+
+function node(tag, className, text) {
+  const item = document.createElement(tag);
+  if (className) item.className = className;
+  if (text !== undefined) item.textContent = text;
+  return item;
+}
+
+function formatPercent(value, digits = 1) {
+  return typeof value === "number" && Number.isFinite(value) ? `${(value * 100).toFixed(digits)}%` : "—";
+}
+
+function formatDelta(value) {
+  if (typeof value !== "number") return "—";
+  const points = value * 100;
+  return `${points > 0 ? "+" : ""}${points.toFixed(1)} pp`;
+}
+
+function statusLabel(status) {
+  return ({
+    passed: "通过",
+    failed: "未通过",
+    not_evaluable: "不可评估",
+    fixture_only: "FIXTURE",
+    mock_only: "MOCK",
+  })[status] || String(status || "unknown");
+}
+
+function renderDiagnostics(elements, readiness) {
+  const runtime = readiness?.runtime || {};
+  const models = Array.isArray(readiness?.models) ? readiness.models : [];
+  const aliasText = Object.entries(readiness?.aliases || {}).map(([alias, model]) => `${alias}→${model}`).join(" · ") || "no aliases";
+  const overview = node("article", "diagnostic-overview");
+  const state = node("span", "diagnostic-state", readiness?.label || "未获取 readiness");
+  state.dataset.state = readiness?.state || "unavailable";
+  overview.append(
+    state,
+    node("strong", "", `selected · ${runtime.selected_mode || "unknown"}`),
+    node("small", "", `requested ${runtime.requested_mode || "unknown"} · request_id ${readiness?.requestId || "—"}`),
+    node("small", "", `aliases · ${aliasText}`),
+  );
+  const reason = node("p", "diagnostic-reason");
+  reason.textContent = runtime.degraded
+    ? `降级原因 · ${runtime.fallback_reason || readiness?.detail || "未提供"}`
+    : `运行诊断 · ${readiness?.detail || "无降级"}`;
+  overview.append(reason);
+
+  const modelList = node("div", "lifecycle-list");
+  if (!models.length) {
+    modelList.append(node("p", "diagnostic-empty", readiness?.state === "mock"
+      ? "离线浏览器 Mock 没有后端模型注册表。"
+      : "readiness 未返回模型生命周期记录。"));
+  } else {
+    for (const model of models) {
+      const card = node("article", "lifecycle-card");
+      card.dataset.state = model.state || "unknown";
+      const head = node("div", "lifecycle-head");
+      head.append(node("strong", "", model.model_id || "unknown"));
+      const badge = node("span", "lifecycle-state", String(model.state || "unknown"));
+      badge.dataset.state = model.state || "unknown";
+      head.append(badge);
+      const ready = node("span", "model-ready", model.ready ? "READY" : "NOT READY");
+      ready.dataset.ready = String(Boolean(model.ready));
+      card.append(
+        head,
+        node("p", "", `${model.base || "unknown base"} · ${model.adapter || "no adapter"}`),
+        node("small", "", `${model.source || "unknown source"} · ${model.quantization || "quantization n/a"}`),
+        node("small", "", `weight ${model.weight_hash ? String(model.weight_hash).slice(0, 16) : "not recorded"}`),
+        ready,
+      );
+      modelList.append(card);
+    }
+  }
+  elements.runtime_diagnostics.replaceChildren(overview, modelList);
+}
+
+function renderComparison(elements, portfolio) {
+  const table = node("table", "comparison-table");
+  const caption = node("caption", "sr-only", "零样本基线与候选模型指标对比");
+  const header = node("tr");
+  for (const label of ["KPI / 指标", "零样本", "候选", "变化", "置信区间", "状态"]) header.append(node("th", "", label));
+  const head = node("thead");
+  head.append(header);
+  const body = node("tbody");
+  for (const metric of portfolio.comparison) {
+    const row = node("tr");
+    row.dataset.status = metric.status;
+    const title = node("th");
+    title.scope = "row";
+    title.append(node("strong", "", metric.label), node("small", "", metric.kpiId || metric.key));
+    const interval = metric.interval;
+    let intervalText = interval && interval.lower != null && interval.upper != null
+      ? `${formatPercent(interval.lower)} – ${formatPercent(interval.upper)}\nN=${interval.observationCount ?? "—"}`
+      : "—";
+    if (metric.improvementInterval?.lower != null && metric.improvementInterval?.upper != null) {
+      intervalText += `\nΔ ${formatDelta(metric.improvementInterval.lower)} – ${formatDelta(metric.improvementInterval.upper)}`;
+    }
+    const status = node("span", "metric-status", statusLabel(metric.status));
+    status.dataset.status = metric.status;
+    row.append(
+      title,
+      node("td", "metric-number", formatPercent(metric.baseline)),
+      node("td", "metric-number is-candidate", formatPercent(metric.candidate)),
+      node("td", "metric-number", formatDelta(metric.delta)),
+      node("td", "metric-interval", intervalText),
+      node("td", "", ""),
+    );
+    row.lastElementChild.append(status);
+    body.append(row);
+  }
+  table.append(caption, head, body);
+  elements.evaluation_comparison.replaceChildren(table);
+}
+
+function renderKpis(elements, portfolio) {
+  const cards = portfolio.comparison.map((metric) => {
+    const card = node("article", "kpi-card");
+    card.dataset.status = metric.status;
+    const top = node("div", "kpi-head");
+    top.append(node("strong", "", metric.kpiId || metric.key));
+    const badge = node("span", "metric-status", statusLabel(metric.status));
+    badge.dataset.status = metric.status;
+    top.append(badge);
+    card.append(top, node("p", "", metric.label));
+    if (metric.reasons.length) {
+      const list = node("ul", "kpi-reasons");
+      for (const reason of metric.reasons) list.append(node("li", "", `${reason.code} · ${reason.message}`));
+      card.append(list);
+    } else {
+      card.append(node("small", "", "无阻断原因"));
+    }
+    if (metric.significanceHint) card.append(node("small", "kpi-hint", `paired · ${metric.significanceHint}`));
+    return card;
+  });
+  elements.evaluation_kpis.replaceChildren(...cards);
+}
+
+function renderSlices(elements, portfolio) {
+  if (!portfolio.slices.length) {
+    elements.evaluation_slices.replaceChildren(node("p", "lab-empty", "当前导入不含 slice_metrics。"));
+    return;
+  }
+  const items = portfolio.slices.map((slice) => {
+    const item = node("article", "slice-item");
+    const top = node("div", "slice-head");
+    top.append(node("strong", "", slice.name), node("span", "", `N=${slice.sample_count}`));
+    const bar = node("span", "slice-bar");
+    bar.style.setProperty("--failure-rate", `${Math.max(0, Math.min(1, slice.failureRate)) * 100}%`);
+    item.append(
+      top,
+      bar,
+      node("small", "", `失败 ${slice.failureCount} · ${formatPercent(slice.failureRate)} · F1 ${formatPercent(slice.macro_f1)} · IoU ${formatPercent(slice.acc_at_iou)}`),
+    );
+    return item;
+  });
+  elements.evaluation_slices.replaceChildren(...items);
+}
+
+function renderFailures(elements, portfolio) {
+  if (!portfolio.failureCases.length) {
+    elements.evaluation_failures.replaceChildren(node("p", "lab-empty", "报告中没有失败案例。"));
+    return;
+  }
+  const items = portfolio.failureCases.slice(0, 50).map((failure) => {
+    const item = node("article", "failure-item");
+    const heading = node("div", "failure-head");
+    heading.append(node("strong", "", failure.sampleId), node("span", "", failure.source));
+    const codes = node("div", "failure-codes");
+    for (const code of failure.codes) codes.append(node("code", "", code));
+    item.append(
+      heading,
+      node("p", "", `truth ${failure.truth} → prediction ${failure.prediction}`),
+      codes,
+    );
+    return item;
+  });
+  if (portfolio.failureCases.length > 50) items.push(node("p", "lab-empty", `仅显示前 50 / ${portfolio.failureCases.length} 个失败案例。`));
+  elements.evaluation_failures.replaceChildren(...items);
+}
+
+function renderPortfolio(elements, portfolio) {
+  elements.evaluation_empty.hidden = true;
+  elements.evaluation_content.hidden = false;
+  elements.evaluation_content.dataset.truthState = portfolio.truthState;
+  elements.evaluation_watermark.hidden = !portfolio.watermark;
+  elements.evaluation_watermark.textContent = portfolio.watermark || "";
+  elements.evaluation_source.textContent = portfolio.sourceName;
+  elements.evaluation_provenance_detail.textContent = [
+    portfolio.datasetVersion ? `dataset ${portfolio.datasetVersion}` : null,
+    portfolio.createdAt ? `created ${portfolio.createdAt}` : null,
+    portfolio.verified ? "SHA-256 verified" : "provenance unverified",
+    portfolio.frozenTest === true ? "frozen test" : null,
+  ].filter(Boolean).join(" · ");
+  elements.evaluation_truth_badge.dataset.state = portfolio.truthState;
+  elements.evaluation_truth_badge.textContent = ({ fixture: "FIXTURE", mock: "MOCK OUTPUT", verified: "PACKAGE VERIFIED", unverified: "UNVERIFIED" })[portfolio.truthState];
+  elements.evaluation_acceptance.dataset.state = portfolio.acceptanceStatus;
+  elements.evaluation_acceptance.textContent = portfolio.eligibleForModelAcceptance
+    ? "MODEL ACCEPTANCE ELIGIBLE"
+    : `${statusLabel(portfolio.acceptanceStatus).toUpperCase()} · NOT ELIGIBLE`;
+  elements.evaluation_summary.replaceChildren(
+    node("span", "", `N ${portfolio.summary.sample_count}`),
+    node("span", "", `FAIL ${portfolio.summary.failure_case_count}`),
+    node("span", "", `HARD-NEG ${portfolio.summary.hard_negative_count}`),
+    ...(portfolio.comparisonStrength ? [node("span", "", `PAIR ${portfolio.comparisonStrength}`)] : []),
+  );
+  renderComparison(elements, portfolio);
+  renderKpis(elements, portfolio);
+  renderSlices(elements, portfolio);
+  renderFailures(elements, portfolio);
+}
+
+export function initializeEvaluationPanel({ getReadiness, refreshReadiness }) {
+  const elements = elementMap();
+  let importSequence = 0;
+
+  const showAlert = (message = "", code = "") => {
+    elements.evaluation_alert.textContent = message ? `${code ? `${code} · ` : ""}${message}` : "";
+    elements.evaluation_alert.hidden = !message;
+  };
+  const resetPortfolio = (message = "", invalidate = true) => {
+    if (invalidate) importSequence += 1;
+    elements.evaluation_content.hidden = true;
+    elements.evaluation_empty.hidden = false;
+    if (message) elements.evaluation_empty.querySelector("p").textContent = message;
+    elements.evaluation_watermark.hidden = true;
+  };
+  const setBusy = (busy) => {
+    elements.evaluation_panel.setAttribute("aria-busy", String(busy));
+    elements.select_evaluation.disabled = busy;
+    elements.load_evaluation_fixture.disabled = busy;
+  };
+  const acceptPortfolio = (portfolio, token) => {
+    if (token !== importSequence) return;
+    renderPortfolio(elements, portfolio);
+    showAlert();
+  };
+  const failImport = (error, token) => {
+    if (token !== importSequence) return;
+    resetPortfolio("导入失败；已清空上一份评测证据，避免陈旧指标混入。", false);
+    const known = error instanceof EvaluationImportError;
+    showAlert(error.message || "无法读取评测 JSON。", known ? error.code : "IMPORT_FAILED");
+  };
+  const importFiles = async () => {
+    resetPortfolio("正在校验 evaluator 证据…");
+    const token = importSequence;
+    setBusy(true);
+    try {
+      acceptPortfolio(await parseEvaluationFiles(elements.evaluation_input.files), token);
+    } catch (error) {
+      failImport(error, token);
+    } finally {
+      if (token === importSequence) setBusy(false);
+      elements.evaluation_input.value = "";
+    }
+  };
+  const loadFixture = async () => {
+    resetPortfolio("正在加载 fixture 契约样例…");
+    const token = importSequence;
+    setBusy(true);
+    try {
+      const response = await fetch("/ui/fixtures/evaluation-package.fixture.json", { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      acceptPortfolio(parseEvaluationPayload(payload, { filename: "evaluation-package.fixture.json" }), token);
+    } catch (error) {
+      failImport(error, token);
+    } finally {
+      if (token === importSequence) setBusy(false);
+    }
+  };
+  const openPanel = () => {
+    elements.evaluation_panel.hidden = false;
+    elements.toggle_evaluation.setAttribute("aria-expanded", "true");
+    renderDiagnostics(elements, getReadiness());
+    elements.evaluation_panel.focus({ preventScroll: true });
+    elements.evaluation_panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const closePanel = () => {
+    elements.evaluation_panel.hidden = true;
+    elements.toggle_evaluation.setAttribute("aria-expanded", "false");
+    elements.toggle_evaluation.focus();
+  };
+
+  elements.toggle_evaluation.addEventListener("click", () => elements.evaluation_panel.hidden ? openPanel() : closePanel());
+  elements.close_evaluation.addEventListener("click", closePanel);
+  elements.select_evaluation.addEventListener("click", () => elements.evaluation_input.click());
+  elements.evaluation_input.addEventListener("change", importFiles);
+  elements.load_evaluation_fixture.addEventListener("click", loadFixture);
+  elements.clear_evaluation.addEventListener("click", () => { resetPortfolio("评测证据已清空。"); showAlert(); });
+  elements.refresh_diagnostics.addEventListener("click", async () => {
+    elements.refresh_diagnostics.disabled = true;
+    try {
+      await refreshReadiness();
+      renderDiagnostics(elements, getReadiness());
+      showAlert();
+    } catch (error) {
+      renderDiagnostics(elements, getReadiness());
+      showAlert(error.message || "readiness 刷新失败。", error.code || "MODEL_NOT_READY");
+    } finally {
+      elements.refresh_diagnostics.disabled = false;
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !elements.evaluation_panel.hidden) closePanel();
+  });
+  renderDiagnostics(elements, getReadiness());
+  return {
+    updateReadiness(readiness) {
+      if (!elements.evaluation_panel.hidden) renderDiagnostics(elements, readiness);
+    },
+  };
+}

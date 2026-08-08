@@ -1,0 +1,104 @@
+{
+  "package_manifest": {
+    "schema_version": "1.0.0",
+    "created_at": "2026-08-08T00:00:00Z",
+    "fixture_only": true,
+    "mock_only": false,
+    "fixture_notice": "Contract fixture only; must not be reported as model performance."
+  },
+  "metrics": {
+    "fixture_only": true,
+    "mock_only": false,
+    "fixture_notice": "Contract fixture only; must not be reported as model performance.",
+    "summary": {
+      "sample_count": 5,
+      "localization_target_count": 3,
+      "hard_negative_count": 2,
+      "failure_case_count": 2,
+      "macro_f1": 0.8888888889,
+      "acc_at_iou": 0.6666666667,
+      "iou_threshold": 0.5,
+      "json_schema_validity_rate": 0.8,
+      "hard_negative_false_positive_rate": 0.5,
+      "evidence_conclusion_consistency_rate": 0.8
+    },
+    "confidence_intervals": {
+      "macro_f1": {"lower": 0.44, "upper": 1.0, "confidence_level": 0.95, "observation_count": 5, "method": "paired_percentile_bootstrap"},
+      "acc_at_iou": {"lower": 0.0, "upper": 1.0, "confidence_level": 0.95, "observation_count": 3, "method": "paired_percentile_bootstrap"},
+      "json_schema_validity_rate": {"lower": 0.4, "upper": 1.0, "confidence_level": 0.95, "observation_count": 5, "method": "paired_percentile_bootstrap"},
+      "hard_negative_false_positive_rate": {"lower": 0.0, "upper": 1.0, "confidence_level": 0.95, "observation_count": 2, "method": "paired_percentile_bootstrap"},
+      "evidence_conclusion_consistency_rate": {"lower": 0.4, "upper": 1.0, "confidence_level": 0.95, "observation_count": 5, "method": "paired_percentile_bootstrap"}
+    },
+    "kpi_acceptance": {
+      "status": "fixture_only",
+      "eligible_for_model_acceptance": false,
+      "assessments": [
+        {"kpi_id":"KPI-01","metric":"macro_f1","status":"fixture_only","observed":0.8888888889,"target":{"minimum":0.82,"baseline_improvement_minimum":0.05},"baseline":0.8,"reasons":[{"code":"FIXTURE_NOT_MODEL_SCORE","message":"contract fixtures must not be reported as model performance"}]},
+        {"kpi_id":"KPI-02","metric":"acc_at_iou","status":"fixture_only","observed":0.6666666667,"target":{"minimum":0.7,"baseline_improvement_minimum":0.08},"baseline":0.55,"reasons":[{"code":"FIXTURE_NOT_MODEL_SCORE","message":"contract fixtures must not be reported as model performance"}]},
+        {"kpi_id":"KPI-03","metric":"json_schema_validity_rate","status":"fixture_only","observed":0.8,"target":{"minimum":0.99},"baseline":null,"reasons":[{"code":"FIXTURE_NOT_MODEL_SCORE","message":"contract fixtures must not be reported as model performance"}]},
+        {"kpi_id":"KPI-04","metric":"hard_negative_false_positive_rate","status":"fixture_only","observed":0.5,"target":{"maximum":0.1,"baseline_relative_reduction_minimum":0.3},"baseline":0.8,"reasons":[{"code":"FIXTURE_NOT_MODEL_SCORE","message":"contract fixtures must not be reported as model performance"}]},
+        {"kpi_id":"KPI-05","metric":"evidence_conclusion_consistency_rate","status":"fixture_only","observed":0.8,"target":{"minimum":0.97},"baseline":null,"reasons":[{"code":"FIXTURE_NOT_MODEL_SCORE","message":"contract fixtures must not be reported as model performance"}]}
+      ]
+    }
+  },
+  "report": {
+    "schema_version": "1.0.0",
+    "summary": {
+      "sample_count": 5,
+      "localization_target_count": 3,
+      "hard_negative_count": 2,
+      "failure_case_count": 2,
+      "macro_f1": 0.8888888889,
+      "acc_at_iou": 0.6666666667,
+      "iou_threshold": 0.5,
+      "json_schema_validity_rate": 0.8,
+      "hard_negative_false_positive_rate": 0.5,
+      "evidence_conclusion_consistency_rate": 0.8
+    },
+    "slice_metrics": {
+      "difficulty:hard_negative": {"sample_count":2,"localization_target_count":0,"hard_negative_count":2,"failure_case_count":1,"macro_f1":0.5,"acc_at_iou":0,"iou_threshold":0.5,"json_schema_validity_rate":0.5,"hard_negative_false_positive_rate":0.5,"evidence_conclusion_consistency_rate":0.5},
+      "prediction_source:api": {"sample_count":4,"localization_target_count":1,"hard_negative_count":2,"failure_case_count":2,"macro_f1":0.8333333333,"acc_at_iou":0,"iou_threshold":0.5,"json_schema_validity_rate":0.75,"hard_negative_false_positive_rate":0.5,"evidence_conclusion_consistency_rate":0.75},
+      "prediction_source:model_result": {"sample_count":1,"localization_target_count":2,"hard_negative_count":0,"failure_case_count":0,"macro_f1":1,"acc_at_iou":1,"iou_threshold":0.5,"json_schema_validity_rate":1,"hard_negative_false_positive_rate":0,"evidence_conclusion_consistency_rate":1}
+    },
+    "samples": [],
+    "failure_cases": [
+      {"sample_id":"s-invalid-json","truth":{"result":"compliant"},"prediction":{"result":"invalid","source_kind":"api"},"metrics":{"json_valid":false},"failure_codes":["INVALID_JSON","HARD_NEGATIVE_FALSE_POSITIVE"]},
+      {"sample_id":"s-api-oob","truth":{"result":"violation"},"prediction":{"result":"violation","source_kind":"api"},"metrics":{"localization_hits":0,"localization_targets":1},"failure_codes":["BBOX_OUT_OF_BOUNDS","LOCALIZATION_MISS"]}
+    ]
+  },
+  "failures": {
+    "failure_case_count": 2,
+    "by_code": {
+      "BBOX_OUT_OF_BOUNDS": {"count":1,"sample_ids":["s-api-oob"]},
+      "HARD_NEGATIVE_FALSE_POSITIVE": {"count":1,"sample_ids":["s-invalid-json"]},
+      "INVALID_JSON": {"count":1,"sample_ids":["s-invalid-json"]},
+      "LOCALIZATION_MISS": {"count":1,"sample_ids":["s-api-oob"]}
+    },
+    "by_slice": {
+      "difficulty:hard_negative": {"sample_count":2,"failure_count":1,"failure_rate":0.5,"failure_codes":{"INVALID_JSON":1},"failure_sample_ids":["s-invalid-json"]},
+      "prediction_source:api": {"sample_count":4,"failure_count":2,"failure_rate":0.5,"failure_codes":{"INVALID_JSON":1,"BBOX_OUT_OF_BOUNDS":1},"failure_sample_ids":["s-invalid-json","s-api-oob"]},
+      "prediction_source:model_result": {"sample_count":1,"failure_count":0,"failure_rate":0,"failure_codes":{},"failure_sample_ids":[]}
+    }
+  },
+  "comparison": {
+    "schema_version": "1.0.0",
+    "fair_comparison": true,
+    "sample_count": 5,
+    "confidence_level": 0.95,
+    "bootstrap_resamples": 200,
+    "bootstrap_seed": 7,
+    "minimum_reliable_samples": 30,
+    "conclusion_strength": "degraded_small_sample",
+    "notice": "Fixture sample support is below the reliability floor; do not claim statistical significance.",
+    "metrics": {
+      "macro_f1": {"baseline":0.7777777778,"candidate":0.8888888889,"delta":0.1111111111,"improvement_delta":0.1111111111,"improvement_ci_lower":-0.1,"improvement_ci_upper":0.4,"observation_count":5,"significance_hint":"insufficient_sample"},
+      "acc_at_iou": {"baseline":0.3333333333,"candidate":0.6666666667,"delta":0.3333333334,"improvement_delta":0.3333333334,"improvement_ci_lower":0,"improvement_ci_upper":0.6666666667,"observation_count":3,"significance_hint":"insufficient_sample"},
+      "json_schema_validity_rate": {"baseline":0.6,"candidate":0.8,"delta":0.2,"improvement_delta":0.2,"improvement_ci_lower":-0.2,"improvement_ci_upper":0.6,"observation_count":5,"significance_hint":"insufficient_sample"},
+      "hard_negative_false_positive_rate": {"baseline":1.0,"candidate":0.5,"delta":-0.5,"improvement_delta":0.5,"improvement_ci_lower":0,"improvement_ci_upper":1.0,"observation_count":2,"significance_hint":"insufficient_sample"},
+      "evidence_conclusion_consistency_rate": {"baseline":0.6,"candidate":0.8,"delta":0.2,"improvement_delta":0.2,"improvement_ci_lower":-0.2,"improvement_ci_upper":0.6,"observation_count":5,"significance_hint":"insufficient_sample"}
+    }
+  },
+  "config": {"fixture_only": true, "mock_only": false, "iou_threshold": 0.5},
+  "data_provenance": {"dataset_version":"compliance_fixture-1.0.0","schema_version":"1.0.0","frozen_test":true},
+  "environment": {"python":"3.13 fixture","platform":{"system":"Darwin"},"code":{"git_commit":"fixture","git_dirty":false}}
+}

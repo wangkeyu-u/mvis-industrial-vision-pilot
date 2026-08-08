@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.mvis/schemas/dataset-manifest-1.0.0.json",
+  "title": "MVIS dataset manifest",
+  "type": "object",
+  "$defs": {
+    "license": {
+      "type": "object",
+      "required": ["identifier", "name"],
+      "properties": {
+        "identifier": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "url": {"type": "string", "format": "uri"},
+        "attribution": {"type": "string"},
+        "redistributable": {"type": "boolean"},
+        "commercial_use": {"type": "boolean"},
+        "derivative_work": {"type": "boolean"},
+        "notes": {"type": "string"}
+      }
+    }
+  },
+  "required": ["dataset_version", "schema_version", "created_at", "entries", "licenses", "split_strategy", "frozen_test", "statistics"],
+  "properties": {
+    "dataset_version": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*-[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "schema_version": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "parent_version": {"type": ["string", "null"]},
+    "change_summary": {"type": ["string", "null"]},
+    "frozen_test": {"type": "boolean"},
+    "split_strategy": {"type": "object"},
+    "statistics": {"type": "object"},
+    "licenses": {"type": "object", "additionalProperties": {"$ref": "#/$defs/license"}},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sample_id", "entity_id", "image", "split", "sha256", "perceptual_hash", "source", "license_id"],
+        "properties": {
+          "sample_id": {"type": "string", "minLength": 1},
+          "entity_id": {"type": "string", "minLength": 1},
+          "image": {"type": "string", "minLength": 1},
+          "split": {"enum": ["train", "validation", "test"]},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "perceptual_hash": {"type": "string", "pattern": "^[0-9a-f]+$"},
+          "source": {"type": "string", "minLength": 1},
+          "license_id": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

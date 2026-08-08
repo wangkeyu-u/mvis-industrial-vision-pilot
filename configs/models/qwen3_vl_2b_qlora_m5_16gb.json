@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "base_model_id": "Qwen/Qwen3-VL-2B-Instruct",
+  "method": "qlora",
+  "module_strategy": "language_only",
+  "rank": 8,
+  "alpha": 16,
+  "dropout": 0.05,
+  "seed": 20260808,
+  "batch_size": 1,
+  "gradient_accumulation_steps": 16,
+  "max_steps": 100,
+  "learning_rate": 0.0001,
+  "gradient_checkpointing": true,
+  "quantization_bits": 4,
+  "extra": {
+    "profile": "m5_macbook_air_16gb_probe",
+    "status": "reserved_not_executed",
+    "early_stopping": true,
+    "hard_negative_required": true
+  }
+}

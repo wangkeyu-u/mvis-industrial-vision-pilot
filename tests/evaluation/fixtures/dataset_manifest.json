@@ -1,0 +1,12 @@
+{
+  "dataset_version": "compliance_fixture-1.0.0",
+  "schema_version": "1.0.0",
+  "created_at": "2026-08-08T00:00:00Z",
+  "parent_version": null,
+  "change_summary": "Contract-only evaluation fixture",
+  "frozen_test": true,
+  "split_strategy": {"fixture": true},
+  "statistics": {"total": 5, "test": 5},
+  "licenses": {},
+  "entries": []
+}

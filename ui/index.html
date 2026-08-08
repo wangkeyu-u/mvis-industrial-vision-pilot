@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="description" content="轻量多模态视觉合规审查演示工作台" />
+    <title>视证台 · 视觉合规审查</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%2310282d'/%3E%3Cpath d='M15 15h12v4h-8v8h-4zm22 0h12v12h-4v-8h-8zM15 37h4v8h8v4H15zm30 0h4v12H37v-4h8z' fill='%23f04c27'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23f2f0e8'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/ui/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">跳到审查工作区</a>
+    <header class="masthead">
+      <div class="brand-block">
+        <span class="brand-mark" aria-hidden="true">视</span>
+        <div>
+          <p class="eyebrow">MVIS / LOCAL REVIEW CONSOLE</p>
+          <h1>视证台</h1>
+        </div>
+      </div>
+      <div class="runtime-strip" aria-label="运行状态">
+        <div id="runtime-status" class="runtime-status" data-state="checking" role="status" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="runtime-copy">
+            <strong id="runtime-label">正在检查运行状态</strong>
+            <small id="client-mode">readiness 预检</small>
+          </span>
+        </div>
+        <button id="toggle-evaluation" class="portfolio-toggle" type="button" aria-expanded="false" aria-controls="evaluation-panel">评测证据</button>
+        <span class="divider" aria-hidden="true"></span>
+        <span>图片不持久化</span>
+        <span class="divider" aria-hidden="true"></span>
+        <span>Schema 1.0</span>
+      </div>
+    </header>
+
+    <main id="workspace" class="workspace">
+      <section class="control-panel" aria-labelledby="task-heading">
+        <div class="section-heading">
+          <span class="section-index">01</span>
+          <div>
+            <p class="eyebrow">INPUT &amp; INTENT</p>
+            <h2 id="task-heading">提交审查任务</h2>
+          </div>
+        </div>
+
+        <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-describedby="upload-help">
+          <input id="image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+          <div class="upload-glyph" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <p class="drop-title">拖入现场图片</p>
+          <p id="upload-help" class="muted">或点击选择 · JPG / PNG / WEBP · 最大 10 MB</p>
+          <div id="file-summary" class="file-summary" hidden>
+            <span id="file-name"></span>
+            <span id="file-meta"></span>
+          </div>
+        </div>
+        <button id="demo-sample" class="sample-action" type="button">载入内置演示图</button>
+
+        <label class="field-label" for="query-input">审查要求</label>
+        <textarea id="query-input" rows="4" maxlength="1000" placeholder="例如：找出未佩戴安全帽的人员，并标出证据区域。">找出不符合安全要求的区域，并说明原因。</textarea>
+        <div class="query-assists" aria-label="演示场景快捷选择">
+          <button class="scenario-chip is-active" type="button" data-query="找出不符合安全要求的区域，并说明原因。">违规</button>
+          <button class="scenario-chip" type="button" data-query="这是合规样例，请确认未发现违规。">合规</button>
+          <button class="scenario-chip" type="button" data-query="画面有遮挡且证据不足，请谨慎判断。">不确定</button>
+          <button class="scenario-chip" type="button" data-query="对身份证和人脸进行高风险自动判定。">拒答</button>
+          <button class="scenario-chip" type="button" data-query="错误演示：模拟超时。">错误</button>
+        </div>
+
+        <div class="configuration-grid">
+          <label>
+            <span>任务</span>
+            <select id="task-select">
+              <option value="inspect">合规审查</option>
+              <option value="ground">目标定位</option>
+              <option value="extract">结构化抽取</option>
+              <option value="vqa">视觉问答</option>
+            </select>
+          </label>
+          <label>
+            <span>模型</span>
+            <select id="model-select">
+              <option value="active">active · 服务当前模型</option>
+              <option value="candidate">candidate · 候选模型</option>
+              <option value="zero-shot">zero-shot · 基线别名</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="toggle-row" for="specialist-toggle">
+          <span>
+            <strong>专用定位协同</strong>
+            <small>在证据定位阶段启用专用视觉模型</small>
+          </span>
+          <input id="specialist-toggle" type="checkbox" checked />
+          <span class="toggle" aria-hidden="true"></span>
+        </label>
+
+        <div id="form-alert" class="form-alert" role="alert" hidden></div>
+        <button id="analyze-button" class="primary-action" type="button">
+          <span>开始审查</span>
+          <span class="action-key">⌘ ↵</span>
+        </button>
+      </section>
+
+      <section class="evidence-panel" aria-labelledby="evidence-heading">
+        <div class="section-heading evidence-title-row">
+          <span class="section-index">02</span>
+          <div>
+            <p class="eyebrow">EVIDENCE VIEW</p>
+            <h2 id="evidence-heading">证据视图</h2>
+          </div>
+          <span id="case-state" class="case-state" data-state="idle">等待输入</span>
+        </div>
+
+        <div id="image-stage" class="image-stage" data-empty="true">
+          <div id="stage-empty" class="stage-empty">
+            <span class="reticle" aria-hidden="true"></span>
+            <p>上传图片后，此处将按原图坐标叠加证据框</p>
+          </div>
+          <img id="preview-image" alt="待审查的上传图片" hidden />
+          <canvas id="overlay-canvas" aria-label="边界框叠加层"></canvas>
+          <div id="stage-loader" class="stage-loader" hidden aria-live="polite">
+            <span class="scan-line" aria-hidden="true"></span>
+            <strong>正在校验证据链</strong>
+            <small>预处理 → 推理 → 结构校验</small>
+          </div>
+        </div>
+
+        <article id="result-card" class="result-card" data-state="idle" aria-live="polite">
+          <div class="result-kicker">
+            <span id="result-icon" aria-hidden="true">—</span>
+            <span id="result-label">尚未运行审查</span>
+          </div>
+          <p id="result-reason">提交图片和审查要求后，系统将在这里展示结论、解释及风险提示。</p>
+          <div id="warning-list" class="warning-list"></div>
+        </article>
+
+        <div id="evidence-list" class="evidence-list" aria-label="检测证据与置信度" hidden></div>
+
+        <div class="telemetry-grid">
+          <article>
+            <p class="eyebrow">MODEL</p>
+            <strong id="model-base">—</strong>
+            <small id="model-adapter">等待结果</small>
+          </article>
+          <article>
+            <p class="eyebrow">LATENCY</p>
+            <strong id="latency-total">—</strong>
+            <small id="latency-detail">预处理 / 推理 / 校验</small>
+          </article>
+          <article>
+            <p class="eyebrow">TRACE</p>
+            <strong id="trace-source">—</strong>
+            <small id="request-id">等待 request_id</small>
+          </article>
+        </div>
+
+        <div class="result-actions">
+          <button id="copy-json" type="button" class="secondary-action" disabled>复制 JSON</button>
+          <a id="download-json" class="secondary-action" aria-disabled="true">导出 JSON</a>
+          <a id="download-evidence" class="secondary-action evidence-export" aria-disabled="true">导出验收证据</a>
+          <button id="clear-case" type="button" class="text-action">清空案例</button>
+        </div>
+      </section>
+    </main>
+
+    <section id="evaluation-panel" class="evaluation-panel" aria-labelledby="evaluation-heading" tabindex="-1" hidden>
+      <header class="evaluation-header">
+        <div>
+          <p class="eyebrow">EVALUATION EVIDENCE / AUDIT ANNEX</p>
+          <h2 id="evaluation-heading">算法作品集·评测证据</h2>
+          <p>直接读取 evaluator report 或完整 package JSON，不改写模型结论。</p>
+        </div>
+        <button id="close-evaluation" class="panel-close" type="button" aria-label="关闭评测证据面板">关闭 ×</button>
+      </header>
+
+      <div class="diagnostic-board" aria-labelledby="diagnostic-heading">
+        <div class="diagnostic-title">
+          <div>
+            <p class="eyebrow">RUNTIME DIAGNOSTICS</p>
+            <h3 id="diagnostic-heading">模型生命周期与运行诊断</h3>
+          </div>
+          <button id="refresh-diagnostics" class="lab-action" type="button">刷新 readiness</button>
+        </div>
+        <div id="runtime-diagnostics" class="runtime-diagnostics" aria-live="polite"></div>
+      </div>
+
+      <div class="evaluation-import">
+        <input id="evaluation-input" type="file" accept="application/json,.json" multiple hidden />
+        <div>
+          <strong>导入评测证据</strong>
+          <small>report.json；或一次选中 package_manifest 及全部组件 JSON。每文件最大 5 MB。</small>
+        </div>
+        <button id="select-evaluation" class="lab-action is-primary" type="button">选择 JSON</button>
+        <button id="load-evaluation-fixture" class="lab-action" type="button">加载 fixture 示例</button>
+        <button id="clear-evaluation" class="lab-action" type="button">清空</button>
+      </div>
+      <div id="evaluation-alert" class="evaluation-alert" role="alert" hidden></div>
+      <div id="evaluation-empty" class="evaluation-empty">
+        <span>NO EVALUATION ARTIFACT LOADED</span>
+        <p>主分析流程保持独立；只有导入评测证据后才展开指标、切片和失败案例。</p>
+      </div>
+
+      <div id="evaluation-content" class="evaluation-content" hidden>
+        <div id="evaluation-watermark" class="evaluation-watermark" hidden></div>
+        <div class="evaluation-provenance">
+          <div>
+            <p class="eyebrow">SOURCE</p>
+            <strong id="evaluation-source">—</strong>
+            <small id="evaluation-provenance-detail">—</small>
+          </div>
+          <span id="evaluation-truth-badge" class="truth-badge" data-state="unverified">未验证</span>
+          <span id="evaluation-acceptance" class="acceptance-badge" data-state="not_evaluable">NOT EVALUABLE</span>
+        </div>
+
+        <section class="evaluation-block" aria-labelledby="comparison-heading">
+          <div class="evaluation-block-heading">
+            <div><p class="eyebrow">BASELINE → CANDIDATE</p><h3 id="comparison-heading">实验对比与置信区间</h3></div>
+            <div id="evaluation-summary" class="evaluation-summary"></div>
+          </div>
+          <div id="evaluation-comparison" class="table-scroll"></div>
+          <div id="evaluation-kpis" class="kpi-grid"></div>
+        </section>
+
+        <div class="evaluation-split">
+          <section class="evaluation-block" aria-labelledby="slices-heading">
+            <div class="evaluation-block-heading"><div><p class="eyebrow">SLICES</p><h3 id="slices-heading">切片定位</h3></div></div>
+            <div id="evaluation-slices" class="slice-list"></div>
+          </section>
+          <section class="evaluation-block" aria-labelledby="failures-heading">
+            <div class="evaluation-block-heading"><div><p class="eyebrow">FAILURE CASES</p><h3 id="failures-heading">失败案例</h3></div></div>
+            <div id="evaluation-failures" class="failure-list"></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>辅助分析工具 · 低置信度与高风险场景必须人工复核</p>
+      <p>M5 / 16GB 本地演示目标 · 不上传用户图片</p>
+    </footer>
+
+    <script type="module" src="/ui/app.mjs"></script>
+  </body>
+</html>

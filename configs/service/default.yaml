@@ -1,0 +1,43 @@
+service:
+  name: multimodal-vision-service
+  version: 0.1.0
+  code_version: unknown
+
+api:
+  schema_version: 1.0.0
+
+image:
+  max_bytes: 10485760
+  max_pixels: 25000000
+  max_dimension: 8192
+
+inference:
+  timeout_seconds: 8.0
+  # M5 MacBook Air 16GB: serialize heavyweight inference by default.
+  concurrency_limit: 1
+  concurrency_wait_seconds: 0.1
+  disconnect_poll_seconds: 0.05
+
+model:
+  # auto: prefer the real MLX bridge and expose an explicit degraded Mock fallback.
+  # real: never fall back; readiness remains false if runtime/weights cannot load.
+  # mock: deterministic API and stability testing only.
+  mode: auto
+  config_path: configs/models/qwen3_vl_2b_mlx_4bit.json
+  # MVIS_MODELOPS_TOKEN is deliberately environment-only and never read here.
+
+cors:
+  # Local UI development only. Production should use same-origin or an explicit list.
+  allowed_origins:
+    - http://127.0.0.1:8000
+    - http://localhost:8000
+    - http://127.0.0.1:5173
+    - http://localhost:5173
+
+resources:
+  # SRS target: stay below 12GB unified memory on the 16GB M5 device.
+  memory_budget_mb: 12288
+  min_disk_free_mb: 2048
+
+observability:
+  log_level: INFO

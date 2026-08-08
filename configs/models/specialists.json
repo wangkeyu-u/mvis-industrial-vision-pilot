@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "enabled": false,
+  "fusion_policy": "reserved",
+  "models": [
+    {
+      "alias": "florence-2-base",
+      "family": "florence2",
+      "model_id": "microsoft/Florence-2-base",
+      "role": "prompted_grounding",
+      "implementation_status": "reserved"
+    },
+    {
+      "alias": "rf-detr-nano",
+      "family": "rf_detr",
+      "model_id": "rf-detr-nano",
+      "role": "fixed_class_detection",
+      "implementation_status": "reserved"
+    }
+  ]
+}

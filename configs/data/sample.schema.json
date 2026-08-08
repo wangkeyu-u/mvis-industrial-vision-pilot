@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.mvis/schemas/data-sample-1.0.0.json",
+  "title": "MVIS visual compliance sample",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sample_id", "entity_id", "image", "instruction", "response", "difficulty", "source", "license"],
+  "properties": {
+    "sample_id": {"type": "string", "minLength": 1},
+    "entity_id": {"type": "string", "minLength": 1},
+    "image": {"type": "string", "minLength": 1},
+    "instruction": {"type": "string", "minLength": 1},
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result", "objects", "reason"],
+      "properties": {
+        "result": {"type": "string", "minLength": 1},
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["label", "bbox"],
+            "properties": {
+              "label": {"type": "string", "minLength": 1},
+              "bbox": {
+                "type": "array",
+                "prefixItems": [
+                  {"type": "integer", "minimum": 0},
+                  {"type": "integer", "minimum": 0},
+                  {"type": "integer", "minimum": 1},
+                  {"type": "integer", "minimum": 1}
+                ],
+                "minItems": 4,
+                "maxItems": 4
+              }
+            }
+          }
+        },
+        "reason": {"type": "string", "minLength": 1},
+        "uncertain": {"type": "boolean", "default": false}
+      }
+    },
+    "difficulty": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "source": {"type": "string", "minLength": 1},
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identifier", "name"],
+      "properties": {
+        "identifier": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "url": {"type": "string", "format": "uri"},
+        "attribution": {"type": "string"},
+        "redistributable": {"type": "boolean"},
+        "commercial_use": {"type": "boolean"},
+        "derivative_work": {"type": "boolean"},
+        "notes": {"type": "string"}
+      }
+    },
+    "metadata": {"type": "object", "default": {}}
+  }
+}

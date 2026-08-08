@@ -1,0 +1,5 @@
+{"sample_id":"s-model-multi","result":"violation","objects":[{"label":"blocked_exit","bbox":[0,0,100,80]},{"label":"missing_guard","bbox":[20,20,30,30]}],"image_width":100,"image_height":80,"is_hard_negative":false,"slices":["source:model_result","difficulty:multi_bbox","coordinate:boundary"]}
+{"sample_id":"s-api-uncertain","result":"uncertain","objects":[],"image_width":64,"image_height":48,"is_hard_negative":false,"slices":["source:api","decision:uncertain"]}
+{"sample_id":"s-api-hard-negative","result":"compliant","objects":[],"image_width":64,"image_height":48,"is_hard_negative":true,"slices":["source:api","difficulty:hard_negative"]}
+{"sample_id":"s-invalid-json","result":"compliant","objects":[],"image_width":64,"image_height":48,"is_hard_negative":true,"slices":["source:api","difficulty:hard_negative"]}
+{"sample_id":"s-api-oob","result":"violation","objects":[{"label":"target","bbox":[90,70,100,80]}],"image_width":100,"image_height":80,"is_hard_negative":false,"slices":["source:api","coordinate:out_of_bounds"]}

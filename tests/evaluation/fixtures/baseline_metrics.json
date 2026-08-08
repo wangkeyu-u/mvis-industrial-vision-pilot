@@ -1,0 +1,5 @@
+{
+  "macro_f1": 0.80,
+  "acc_at_iou": 0.55,
+  "hard_negative_false_positive_rate": 0.80
+}

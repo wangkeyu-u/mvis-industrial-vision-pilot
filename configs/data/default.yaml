@@ -1,0 +1,19 @@
+schema_version: "1.0.0"
+dataset_version_pattern: "domain-major.minor.patch"
+supported_image_formats: [JPEG, PNG, WEBP]
+max_image_bytes: 10485760
+max_image_pixels: 25000000
+perceptual_hash:
+  algorithm: dhash
+  bits: 64
+  max_hamming_distance: 5
+split:
+  train: 0.70
+  validation: 0.15
+  test: 0.15
+  seed: 42
+  isolation_keys: [entity_id, perceptual_hash_component]
+quality_gates:
+  max_cross_split_near_duplicate_rate: 0.005
+  min_test_hard_negative_rate: 0.20
+  min_double_review_agreement: 0.95

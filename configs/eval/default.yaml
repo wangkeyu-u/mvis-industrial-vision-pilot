@@ -1,0 +1,18 @@
+classification:
+  primary_metric: macro_f1
+  target: 0.82
+localization:
+  primary_metric: acc_at_iou
+  iou_threshold: 0.50
+  target: 0.70
+structured_output:
+  primary_metric: json_schema_validity_rate
+  target: 0.99
+  count_malformed_hard_negative_as_false_positive: true
+hallucination:
+  positive_results: [violation]
+  negative_results: [compliant, no_violation, negative]
+  uncertain_result: uncertain
+  max_hard_negative_false_positive_rate: 0.10
+consistency:
+  target: 0.97

@@ -1,0 +1,41 @@
+{
+  "classification": {
+    "targets": ["violation", "compliant", "violation", "compliant"],
+    "predictions": ["violation", "compliant", "compliant", "compliant"],
+    "expected_macro_f1": 0.7333333333333334
+  },
+  "localization": {
+    "targets": [[0, 0, 10, 10], [0, 0, 10, 10]],
+    "predictions": [[0, 0, 10, 10], [10, 10, 20, 20]],
+    "expected_acc_at_iou_0_5": 0.5
+  },
+  "outputs": [
+    {
+      "result": "violation",
+      "objects": [{"label": "blocked_exit", "bbox": [1, 1, 8, 8], "confidence": 0.9}],
+      "reason": "exit blocked",
+      "uncertain": false
+    },
+    {
+      "result": "compliant",
+      "objects": [],
+      "reason": "clear",
+      "uncertain": false
+    },
+    {
+      "result": "compliant",
+      "objects": [{"label": "blocked_exit", "bbox": [1, 1, 8, 8]}],
+      "reason": "contradictory evidence",
+      "uncertain": false
+    },
+    {
+      "result": "violation",
+      "objects": [],
+      "uncertain": false
+    }
+  ],
+  "hard_negative_mask": [false, true, true, false],
+  "expected_json_validity": 0.75,
+  "expected_hard_negative_fpr": 0.5,
+  "expected_consistency": 0.5
+}

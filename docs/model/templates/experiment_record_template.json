@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "run_id": "not_run",
+  "experiment_id": "unavailable",
+  "spec_fingerprint": "unavailable",
+  "status": "not_run",
+  "code_version": {
+    "status": "not_run",
+    "value": null,
+    "reason": null
+  },
+  "data_version": {
+    "status": "unavailable",
+    "value": null,
+    "reason": "frozen data version not selected"
+  },
+  "execution": {
+    "started_at": {
+      "status": "not_run",
+      "value": null,
+      "reason": null
+    },
+    "ended_at": {
+      "status": "not_run",
+      "value": null,
+      "reason": null
+    }
+  },
+  "adapter_hash": {
+    "status": "not_run",
+    "value": null,
+    "reason": null
+  },
+  "metrics": {
+    "macro_f1": {"status": "not_run", "value": null, "reason": null},
+    "acc_at_iou_0_5": {"status": "not_run", "value": null, "reason": null},
+    "json_schema_validity_rate": {"status": "not_run", "value": null, "reason": null},
+    "hard_negative_false_positive_rate": {"status": "not_run", "value": null, "reason": null},
+    "evidence_conclusion_consistency_rate": {"status": "not_run", "value": null, "reason": null}
+  },
+  "resources": {
+    "p50_latency_ms": {"status": "not_run", "value": null, "reason": null},
+    "p95_latency_ms": {"status": "not_run", "value": null, "reason": null},
+    "peak_memory_mb": {"status": "not_run", "value": null, "reason": null}
+  },
+  "artifacts": {
+    "predictions_jsonl": {"status": "not_run", "value": null, "reason": null},
+    "evaluation_report": {"status": "not_run", "value": null, "reason": null},
+    "adapter_path": {"status": "not_run", "value": null, "reason": null}
+  }
+}

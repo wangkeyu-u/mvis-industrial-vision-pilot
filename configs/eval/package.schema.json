@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.mvis/schemas/evaluation-package-manifest-1.0.0.json",
+  "title": "MVIS reproducible evaluation package manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "created_at", "fixture_only", "mock_only", "fixture_notice", "component_sha256"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "fixture_only": {"type": "boolean"},
+    "mock_only": {"type": "boolean"},
+    "fixture_notice": {"type": ["string", "null"]},
+    "component_sha256": {
+      "type": "object",
+      "required": [
+        "config.json",
+        "data_provenance.json",
+        "environment.json",
+        "failures.json",
+        "metrics.json",
+        "report.json",
+        "report.md",
+        "report.html"
+      ],
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    }
+  }
+}
