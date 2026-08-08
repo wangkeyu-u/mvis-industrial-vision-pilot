@@ -29,6 +29,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 UI_ROOT = PROJECT_ROOT / "ui"
 CLIENT_ROOT = PROJECT_ROOT / "src" / "client"
 ASSET_ROOT = PROJECT_ROOT / "assets"
+DEFAULT_PROBE_ROOT = PROJECT_ROOT / "data" / "processed" / "ksdd_v0"
 MAX_BODY_BYTES = 14 * 1024 * 1024
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
@@ -207,6 +208,15 @@ class DemoRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self._write_body(body)
 
+    def _probe_manifest(self) -> dict[str, Any] | None:
+        manifest_path = self._proxy_server.probe_root / "probe_manifest.json"
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        probes = payload.get("probes") if isinstance(payload, dict) else None
+        return payload if isinstance(probes, list) else None
+
     @property
     def _proxy_server(self) -> "DemoHTTPServer":
         return self.server  # type: ignore[return-value]
@@ -279,6 +289,28 @@ class DemoRequestHandler(BaseHTTPRequestHandler):
             return
         if path == "/demo/health/live":
             self._send_json({"status": "ok", "service": "mvis-demo"})
+            return
+        if path == "/demo/real-probes/manifest.json":
+            manifest = self._probe_manifest()
+            if manifest is None:
+                self.send_error(HTTPStatus.NOT_FOUND)
+            else:
+                self._send_json(manifest)
+            return
+        if path.startswith("/demo/real-probes/"):
+            manifest = self._probe_manifest()
+            requested_name = unquote(path.removeprefix("/demo/real-probes/"))
+            allowed = {
+                Path(str(item.get("probe_image", ""))).name: str(item.get("probe_image", ""))
+                for item in (manifest or {}).get("probes", [])
+                if isinstance(item, dict) and item.get("probe_image")
+            }
+            relative = allowed.get(requested_name) if "/" not in requested_name and "\\" not in requested_name else None
+            resolved = self._safe_path(self._proxy_server.probe_root, relative) if relative else None
+            if resolved:
+                self._send_file(resolved)
+            else:
+                self.send_error(HTTPStatus.NOT_FOUND)
             return
         if path in PROXY_PATHS and self._proxy_server.backend_url:
             self._proxy_request("GET", path)
@@ -359,9 +391,11 @@ class DemoHTTPServer(ThreadingHTTPServer):
         *,
         backend_url: str | None = None,
         proxy_timeout: float = 10.0,
+        probe_root: Path = DEFAULT_PROBE_ROOT,
     ) -> None:
         self.backend_url = backend_url.rstrip("/") if backend_url else None
         self.proxy_timeout = proxy_timeout
+        self.probe_root = probe_root.resolve()
         super().__init__(server_address, DemoRequestHandler)
 
 
@@ -371,8 +405,11 @@ def create_server(
     *,
     backend_url: str | None = None,
     proxy_timeout: float = 10.0,
+    probe_root: Path = DEFAULT_PROBE_ROOT,
 ) -> DemoHTTPServer:
-    return DemoHTTPServer((host, port), backend_url=backend_url, proxy_timeout=proxy_timeout)
+    return DemoHTTPServer(
+        (host, port), backend_url=backend_url, proxy_timeout=proxy_timeout, probe_root=probe_root
+    )
 
 
 def main() -> None:

@@ -88,10 +88,7 @@ def _build_real_registration(settings: ServiceSettings) -> ModelRegistration:
     config_fingerprint = _file_fingerprint(settings.model_config_path)
     if config_fingerprint is None:
         raise RealAdapterUnavailable("model_config_unavailable")
-    if (
-        importlib.util.find_spec("mlx") is None
-        or importlib.util.find_spec("mlx_vlm") is None
-    ):
+    if importlib.util.find_spec("mlx") is None or importlib.util.find_spec("mlx_vlm") is None:
         raise RealAdapterUnavailable("mlx_runtime_unavailable")
 
     try:
@@ -124,9 +121,7 @@ def _unavailable_registry(settings: ServiceSettings, reason_code: str) -> ModelR
     placeholder = ModelRegistration(
         model_id=model_id,
         adapter=UnavailableModelAdapter(identity, reason_code),
-        state=(
-            ModelState.ACTIVE if settings.model_mode == "real" else ModelState.CANDIDATE
-        ),
+        state=(ModelState.ACTIVE if settings.model_mode == "real" else ModelState.CANDIDATE),
         source=f"model-config:{Path(settings.model_config_path).name}",
         quantization=quantization,
         weight_hash=None,

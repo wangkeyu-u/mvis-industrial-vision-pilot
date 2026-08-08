@@ -67,12 +67,8 @@ def test_registry_promotion_preserves_previous_alias() -> None:
     registry = ModelRegistry()
     first = MockModelAdapter()
     second = MockModelAdapter()
-    registry.register(
-        ModelRegistration("first", first, ModelState.ACTIVE, source="test")
-    )
-    registry.register(
-        ModelRegistration("second", second, ModelState.CANDIDATE, source="test")
-    )
+    registry.register(ModelRegistration("first", first, ModelState.ACTIVE, source="test"))
+    registry.register(ModelRegistration("second", second, ModelState.CANDIDATE, source="test"))
     registry.transition("second", ModelState.VALIDATED)
     registry.transition("second", ModelState.ACTIVE)
 
@@ -97,9 +93,7 @@ def test_settings_reject_non_positive_resource_limits() -> None:
 def test_settings_environment_selects_model_and_cors(monkeypatch, tmp_path) -> None:
     monkeypatch.setenv("MVIS_MODEL_MODE", "real")
     monkeypatch.setenv("MVIS_MODEL_CONFIG", "configs/models/custom.json")
-    monkeypatch.setenv(
-        "MVIS_CORS_ORIGINS", "http://127.0.0.1:8000,http://localhost:5173"
-    )
+    monkeypatch.setenv("MVIS_CORS_ORIGINS", "http://127.0.0.1:8000,http://localhost:5173")
 
     settings = ServiceSettings.load(tmp_path / "missing.yaml")
     assert settings.model_mode == "real"

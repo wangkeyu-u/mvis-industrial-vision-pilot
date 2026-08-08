@@ -36,9 +36,7 @@ def client(settings: ServiceSettings) -> TestClient:
 def client_factory(settings: ServiceSettings):
     clients: list[TestClient] = []
 
-    def factory(
-        adapter: ModelAdapter | None = None, **setting_overrides: object
-    ) -> TestClient:
+    def factory(adapter: ModelAdapter | None = None, **setting_overrides: object) -> TestClient:
         overridden = replace(settings, **setting_overrides)
         test_client = TestClient(
             create_app(overridden, build_mock_registry(adapter or MockModelAdapter())),

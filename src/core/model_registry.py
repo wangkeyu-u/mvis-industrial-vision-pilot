@@ -89,9 +89,7 @@ class ModelRegistration:
     model_fingerprint: str | None = None
 
     def __post_init__(self) -> None:
-        if self.config_fingerprint is None and not self.source.startswith(
-            "model-config:"
-        ):
+        if self.config_fingerprint is None and not self.source.startswith("model-config:"):
             self.config_fingerprint = fingerprint_mapping(
                 {
                     "model_id": self.model_id,
@@ -223,10 +221,7 @@ class ModelRegistry:
         with self._lock:
             if model_id not in self._models:
                 raise ValueError(f"unknown model: {model_id}")
-            if (
-                alias == "active"
-                and self._models[model_id].state is not ModelState.ACTIVE
-            ):
+            if alias == "active" and self._models[model_id].state is not ModelState.ACTIVE:
                 raise ValueError("active alias requires a model in active state")
             self._aliases[alias] = model_id
 
@@ -244,18 +239,12 @@ class ModelRegistry:
                 model_id, actor=actor, request_id=request_id, reason=reason
             )
         if target is ModelState.ACTIVE:
-            return self.activate(
-                model_id, actor=actor, request_id=request_id, reason=reason
-            )
+            return self.activate(model_id, actor=actor, request_id=request_id, reason=reason)
         if target is ModelState.RETIRED:
-            return self.retire(
-                model_id, actor=actor, request_id=request_id, reason=reason
-            )
+            return self.retire(model_id, actor=actor, request_id=request_id, reason=reason)
         with self._lock:
             registration = self._get(model_id)
-            raise ValueError(
-                f"invalid model state transition: {registration.state} -> {target}"
-            )
+            raise ValueError(f"invalid model state transition: {registration.state} -> {target}")
 
     def validate_candidate(
         self,
@@ -270,13 +259,8 @@ class ModelRegistry:
             self._require_transition(registration, ModelState.VALIDATED)
             if not registration.adapter.ready:
                 raise ValueError("candidate adapter must be ready before validation")
-            if (
-                not registration.config_fingerprint
-                or not registration.model_fingerprint
-            ):
-                raise ValueError(
-                    "candidate fingerprints are required before validation"
-                )
+            if not registration.config_fingerprint or not registration.model_fingerprint:
+                raise ValueError("candidate fingerprints are required before validation")
             previous_state = registration.state
             registration.state = ModelState.VALIDATED
             if self._aliases.get("candidate") == model_id:
@@ -310,9 +294,7 @@ class ModelRegistry:
             self._require_transition(registration, ModelState.ACTIVE)
             if not registration.adapter.ready:
                 raise ValueError("validated adapter must be ready before activation")
-            self._check_expected_active(
-                expected_active_model_id, expected_active_fingerprint
-            )
+            self._check_expected_active(expected_active_model_id, expected_active_fingerprint)
             previous_id = self._aliases.get("active")
             state_snapshot = {key: item.state for key, item in self._models.items()}
             alias_snapshot = dict(self._aliases)
@@ -353,15 +335,11 @@ class ModelRegistry:
         """Atomically reactivate previous and retire the rolled-back active model."""
 
         with self._lock:
-            self._check_expected_active(
-                expected_active_model_id, expected_active_fingerprint
-            )
+            self._check_expected_active(expected_active_model_id, expected_active_fingerprint)
             current_id = self._aliases.get("active")
             previous_id = self._aliases.get("previous")
             if not current_id or not previous_id or current_id == previous_id:
-                raise ValueError(
-                    "rollback requires distinct active and previous aliases"
-                )
+                raise ValueError("rollback requires distinct active and previous aliases")
             current = self._get(current_id)
             previous = self._get(previous_id)
             if previous.state is not ModelState.VALIDATED or not previous.adapter.ready:
@@ -405,9 +383,7 @@ class ModelRegistry:
         with self._lock:
             registration = self._get(model_id)
             if registration.state is ModelState.ACTIVE:
-                raise ValueError(
-                    "active model must be replaced or rolled back before retire"
-                )
+                raise ValueError("active model must be replaced or rolled back before retire")
             self._require_transition(registration, ModelState.RETIRED)
             previous_state = registration.state
             registration.state = ModelState.RETIRED
@@ -433,13 +409,9 @@ class ModelRegistry:
             raise ValueError(f"unknown model: {model_id}") from exc
 
     @staticmethod
-    def _require_transition(
-        registration: ModelRegistration, target: ModelState
-    ) -> None:
+    def _require_transition(registration: ModelRegistration, target: ModelState) -> None:
         if target not in ALLOWED_TRANSITIONS[registration.state]:
-            raise ValueError(
-                f"invalid model state transition: {registration.state} -> {target}"
-            )
+            raise ValueError(f"invalid model state transition: {registration.state} -> {target}")
 
     def _check_expected_active(
         self,
@@ -498,10 +470,7 @@ class ModelRegistry:
                     ErrorCode.MODEL_NOT_FOUND,
                     f"model alias is not registered: {alias_or_id}",
                 )
-            if (
-                registration.state is not ModelState.ACTIVE
-                or not registration.adapter.ready
-            ):
+            if registration.state is not ModelState.ACTIVE or not registration.adapter.ready:
                 raise ServiceError(
                     ErrorCode.MODEL_NOT_READY,
                     f"model is not active and ready: {alias_or_id}",
@@ -515,18 +484,14 @@ class ModelRegistry:
 
     def ready(self) -> bool:
         active = self.active()
-        return bool(
-            active and active.state is ModelState.ACTIVE and active.adapter.ready
-        )
+        return bool(active and active.state is ModelState.ACTIVE and active.adapter.ready)
 
     def statuses(self) -> dict[str, object]:
         with self._lock:
             return {
                 "runtime": self.runtime_status(),
                 "aliases": dict(sorted(self._aliases.items())),
-                "models": [
-                    self._models[key].public_status() for key in sorted(self._models)
-                ],
+                "models": [self._models[key].public_status() for key in sorted(self._models)],
                 "audit_sequence": self._audit_sequence,
             }
 

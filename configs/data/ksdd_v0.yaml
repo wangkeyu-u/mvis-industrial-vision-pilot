@@ -1,0 +1,35 @@
+dataset:
+  name: Kolektor Surface-Defect Dataset
+  short_name: KSDD
+  version: ksdd-0.1.0
+  status: pilot
+  source_page: https://www.vicos.si/resources/kolektorsdd/
+  archive_url: https://data.vicos.si/datasets/KSDD/KolektorSDD.zip
+  archive_bytes: 101831129
+  archive_sha256: 65dc621693418585de9c4467d1340ea7958a6181816f0dc2883a1e8b61f9d4dc
+  expected_images: 399
+  expected_positive_images: 52
+  physical_entities: 50
+license:
+  identifier: cc-by-nc-sa-4.0
+  name: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+  url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  attribution: >-
+    Kolektor Group d.o.o.; Domen Tabernik, Samo Sela, Jure Skvarc, and
+    Danijel Skocaj, Visual Cognitive Systems Laboratory, University of Ljubljana
+  redistributable: true
+  commercial_use: false
+  derivative_work: true
+split:
+  seed: 42
+  ratios:
+    train: 0.70
+    validation: 0.15
+    test: 0.15
+  entity_key: source physical item directory (kosNN)
+  perceptual_hash: dhash-64
+  max_hamming_distance: 5
+  frozen_test: true
+acceptance:
+  minimum_formal_kpi_test_samples: 300
+  fixture_or_mock: false

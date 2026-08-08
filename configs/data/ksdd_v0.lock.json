@@ -1,0 +1,11 @@
+{
+  "archive_bytes": 101831129,
+  "archive_sha256": "65dc621693418585de9c4467d1340ea7958a6181816f0dc2883a1e8b61f9d4dc",
+  "dataset_version": "ksdd-0.1.0",
+  "fixture_or_mock": false,
+  "formal_kpi_eligible": false,
+  "frozen_manifest_path": "data/processed/ksdd_v0/manifest.json",
+  "manifest_sha256": "fe9983728d7aa830f11a1369ff1a4eb353be8e8403685a1cf45ea23db128085a",
+  "pilot_reason": "Frozen test split has 56 samples; formal KPI floor is 300.",
+  "source_page": "https://www.vicos.si/resources/kolektorsdd/"
+}

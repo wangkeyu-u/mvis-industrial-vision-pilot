@@ -60,14 +60,10 @@ async def sample_api_stability(
             separators=(",", ":"),
         ).encode()
         wall_started = time.perf_counter()
-        status, response_headers, payload = await _asgi_json_request(
-            app, body, request_id
-        )
+        status, response_headers, payload = await _asgi_json_request(app, body, request_id)
         wall_samples.append((time.perf_counter() - wall_started) * 1000)
         statuses[str(status)] = statuses.get(str(status), 0) + 1
-        returned_id = payload.get("request_id") or payload.get("error", {}).get(
-            "request_id"
-        )
+        returned_id = payload.get("request_id") or payload.get("error", {}).get("request_id")
         header_id = response_headers.get("x-request-id")
         if isinstance(returned_id, str) and returned_id == header_id:
             request_ids.add(returned_id)
@@ -179,13 +175,9 @@ async def _asgi_json_request(
     await app(scope, receive, send)  # type: ignore[arg-type]
     start = next(item for item in outbound if item["type"] == "http.response.start")
     response_body = b"".join(
-        item.get("body", b"")
-        for item in outbound
-        if item["type"] == "http.response.body"
+        item.get("body", b"") for item in outbound if item["type"] == "http.response.body"
     )
-    headers = {
-        name.decode().lower(): value.decode() for name, value in start["headers"]
-    }
+    headers = {name.decode().lower(): value.decode() for name, value in start["headers"]}
     return start["status"], headers, json.loads(response_body)
 
 

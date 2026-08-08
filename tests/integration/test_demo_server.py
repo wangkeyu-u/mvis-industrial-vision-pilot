@@ -7,6 +7,8 @@ import time
 import unittest
 from http.client import HTTPConnection
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from app.server import create_server
 
@@ -105,6 +107,42 @@ class DemoServerIntegrationTest(unittest.TestCase):
     def test_static_route_rejects_path_escape(self) -> None:
         status, _ = self.request("GET", "/ui/../app/server.py")
         self.assertEqual(status, 404)
+
+    def test_real_probe_route_serves_only_manifest_allow_list(self) -> None:
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "probes").mkdir()
+            image = b"\xff\xd8\xfflicensed-probe"
+            (root / "probes" / "allowed.jpg").write_bytes(image)
+            (root / "secret.jpg").write_bytes(b"secret")
+            (root / "probe_manifest.json").write_text(json.dumps({"probes": [{
+                "sample_id": "licensed-1",
+                "probe_image": "probes/allowed.jpg",
+                "license_id": "cc-by-nc-sa-4.0",
+                "attribution": "dataset authors",
+                "sha256": "0" * 64,
+            }]}), encoding="utf-8")
+            server = create_server(port=0, probe_root=root)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                connection = HTTPConnection(*server.server_address, timeout=2)
+                connection.request("GET", "/demo/real-probes/manifest.json")
+                response = connection.getresponse()
+                manifest = json.loads(response.read())
+                self.assertEqual((response.status, manifest["probes"][0]["sample_id"]), (200, "licensed-1"))
+                connection.request("GET", "/demo/real-probes/allowed.jpg")
+                response = connection.getresponse()
+                self.assertEqual((response.status, response.read()), (200, image))
+                connection.request("GET", "/demo/real-probes/secret.jpg")
+                response = connection.getresponse()
+                response.read()
+                self.assertEqual(response.status, 404)
+                connection.close()
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=2)
 
 
 class RecordingFastAPIHandler(BaseHTTPRequestHandler):

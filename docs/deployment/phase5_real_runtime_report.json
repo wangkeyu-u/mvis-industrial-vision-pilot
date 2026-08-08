@@ -1,0 +1,925 @@
+{
+  "blockers": [],
+  "diagnostics": {
+    "cache": {
+      "complete": true,
+      "config_present": true,
+      "exists": true,
+      "reason": null,
+      "source": "huggingface_cache",
+      "weight_files": [
+        "model.safetensors"
+      ]
+    },
+    "dependencies": {
+      "fastapi": {
+        "distribution": "fastapi",
+        "installed": true,
+        "version": "0.141.1"
+      },
+      "huggingface_hub": {
+        "distribution": "huggingface-hub",
+        "installed": true,
+        "version": "1.27.0"
+      },
+      "mlx": {
+        "distribution": "mlx",
+        "installed": true,
+        "version": "0.32.0"
+      },
+      "mlx_vlm": {
+        "distribution": "mlx-vlm",
+        "installed": true,
+        "version": "0.6.10"
+      },
+      "pillow": {
+        "distribution": "Pillow",
+        "installed": true,
+        "version": "12.3.0"
+      },
+      "pydantic": {
+        "distribution": "pydantic",
+        "installed": true,
+        "version": "2.13.4"
+      }
+    },
+    "ready": true,
+    "reasons": [],
+    "status": "ready"
+  },
+  "duration_ms": 39559.064,
+  "hardware": {
+    "cpu": "Apple M5",
+    "machine": "arm64",
+    "memory_mb": 16384.0,
+    "python": "3.13.13",
+    "release": "25.5.0",
+    "system": "Darwin"
+  },
+  "interpretation": "Real-model metrics are qualified only after strict real readiness, Uvicorn HTTP probes, 30 successful measured requests, timeout recovery, and the configured memory budget all pass. Mock measurements are never substituted.",
+  "model": {
+    "alias": "qwen3-vl-2b-instruct-4bit",
+    "allow_download": false,
+    "backend": "mlx_vlm",
+    "base_model_id": "Qwen/Qwen3-VL-2B-Instruct",
+    "config_fingerprint": "71b87d18c01aeb4d",
+    "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+    "quantization": "4-bit/affine",
+    "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+    "trust_remote_code": false,
+    "weight_sha256": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+  },
+  "performance": {
+    "eligible": true,
+    "measured_runs": 30,
+    "memory_budget_mb": 12288,
+    "memory_within_budget": true,
+    "mock_samples_used": false,
+    "process_peak_memory_after_mb": 2047.11,
+    "process_peak_memory_before_mb": 2034.84,
+    "qualification": "real_model_runtime",
+    "status_counts": {
+      "200": 30
+    },
+    "successful_measured_runs": 30,
+    "wall_latency_ms": {
+      "count": 30,
+      "max": 1615.865,
+      "mean": 1006.736,
+      "min": 859.668,
+      "p50": 872.967,
+      "p95": 1543.057
+    },
+    "warmup_runs": 5
+  },
+  "preflight": {
+    "api_schema_version": "1.0.0",
+    "can_serve": true,
+    "checks": [
+      {
+        "details": {
+          "path": "configs/service/default.yaml"
+        },
+        "name": "service_config",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "path": "configs/models/qwen3_vl_2b_mlx_4bit.json"
+        },
+        "name": "model_config",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "configured": "1.0.0",
+          "implemented": "1.0.0"
+        },
+        "name": "api_schema",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "free_mb": 266811.3,
+          "minimum_free_mb": 2048,
+          "path": "."
+        },
+        "name": "disk_budget",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "budget_mb": 12288,
+          "note": "process peak is preflight-only, not model inference peak",
+          "physical_memory_mb": 16384.0,
+          "process_peak_mb": 2034.84
+        },
+        "name": "memory_budget",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "active_model": {
+            "adapter": null,
+            "base": "qwen3-vl-2b-instruct-4bit",
+            "config_fingerprint": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+            "model_fingerprint": "3817a1f046d88b69acfbd05b2b7e9caf5c2c4d6383984bbd60f238f472c4df83",
+            "model_id": "qwen3-vl-2b-instruct-4bit",
+            "quantization": "4-bit",
+            "ready": true,
+            "source": "model-config:qwen3_vl_2b_mlx_4bit.json",
+            "state": "active",
+            "weight_hash": null
+          },
+          "runtime": {
+            "degraded": false,
+            "fallback_reason": null,
+            "requested_mode": "real",
+            "selected_mode": "real"
+          }
+        },
+        "name": "model_readiness",
+        "required": true,
+        "status": "pass"
+      }
+    ],
+    "code_version": "phase5-real-final",
+    "production_ready": true,
+    "report_type": "mvis_preflight",
+    "report_version": "1.0.0",
+    "runtime": {
+      "degraded": false,
+      "fallback_reason": null,
+      "requested_mode": "real",
+      "selected_mode": "real"
+    },
+    "service": "multimodal-vision-service",
+    "service_version": "0.1.0",
+    "status": "pass",
+    "timestamp": "2026-08-08T03:42:27.596321+00:00"
+  },
+  "probes": {
+    "health": {
+      "body": {
+        "details": {
+          "aliases": {
+            "active": "qwen3-vl-2b-instruct-4bit"
+          },
+          "audit_sequence": 1,
+          "models": [
+            {
+              "adapter": null,
+              "base": "qwen3-vl-2b-instruct-4bit",
+              "config_fingerprint": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+              "model_fingerprint": "3817a1f046d88b69acfbd05b2b7e9caf5c2c4d6383984bbd60f238f472c4df83",
+              "model_id": "qwen3-vl-2b-instruct-4bit",
+              "quantization": "4-bit",
+              "ready": true,
+              "source": "model-config:qwen3_vl_2b_mlx_4bit.json",
+              "state": "active",
+              "weight_hash": null
+            }
+          ],
+          "runtime": {
+            "degraded": false,
+            "fallback_reason": null,
+            "requested_mode": "real",
+            "selected_mode": "real"
+          }
+        },
+        "request_id": "req_8698b6df187d4809b31921067fc75e60",
+        "status": "ready"
+      },
+      "request_id": "req_8698b6df187d4809b31921067fc75e60",
+      "status_code": 200,
+      "wall_latency_ms": 1.407
+    },
+    "initial_analyze": {
+      "api_latency_ms": 900,
+      "error": null,
+      "model": {
+        "adapter": null,
+        "base": "qwen3-vl-2b-instruct-4bit"
+      },
+      "objects": [],
+      "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+      "request_id": "req_a182a7cd01794713a9ccfbc76534ec09",
+      "result": "compliant",
+      "status_code": 200,
+      "uncertain": false,
+      "wall_latency_ms": 906.477,
+      "warnings": []
+    },
+    "measured": [
+      {
+        "api_latency_ms": 1469,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_7733cb8e62bb4aacaca9c6520cc034b1",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1472.623,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 1538,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_2247f00c73d44396a8b94557a557b698",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1540.554,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 1612,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_3399146fcb144b65896656f46695c8ef",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1615.865,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 1443,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_cd964c4022a444c2808e9381153b4a12",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1447.023,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 872,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_99f14d56ce914472b2725db0faf8866b",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 875.149,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 858,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_61bea755fa2d4685b64ab4fc7fc5d0bb",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 860.988,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 863,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_c8d573a14bd548df822537699109c5f7",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 866.759,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 864,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_9eef3173a9814faeb1cd41da5fd0f103",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 867.946,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 874,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_0865b1fbc818447b80268953d25d4a7e",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 876.681,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 866,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_e09667c8689f4dcca4914e59475a600f",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 868.402,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 868,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_35294abb1a024755a2a6555bb0f0d755",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 870.436,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 868,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_ac5b40e8b11c4a9aa67354f4eef7b847",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 871.557,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 864,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_e1f0b030986c48ccb043d00d30969865",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 867.445,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 883,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_a556a3c4b0394ed998cd36d3e44d3b77",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 886.597,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 1538,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_1b39b8f3d8cd46a49aed1791b606b1a8",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1543.057,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 1380,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_9ef9262c12b74c6797f7a3d3e1733c82",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1384.457,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 1051,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_6fb913c3159147a98d4ab51095767779",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1052.593,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 863,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_6b82ec5da0654ad3b5263a9b447ef1b4",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 865.398,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 868,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_56f44398abe042d4b56f64ca5420500d",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 870.268,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 857,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_7db6d46d59c548f2bff3a1f6e4b4d836",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 859.668,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 865,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_409d213827b74d9e8a8fa5f1e1444266",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 868.647,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 860,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_3fac3407a9af4e04b0fe6bc593b84f3f",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 862.781,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 859,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_24033faedf5d4edf94e025e3b2208c47",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 860.827,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 875,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_3d7fa12d7092443ca295ed0464279609",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 879.111,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 869,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_4cdd0cdec28a48eabb4da3fec67d9f26",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 872.967,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 865,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_92b4a47206834cc88dd763758aecf9ea",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 869.021,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 871,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_309e1c0c71174622a38f43e695881581",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 874.721,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 900,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_160d892899ef4cfea04d8cd91f2f283e",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 904.986,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 927,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_34f26ba8b42043c2b6ac628cd98e07c5",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 930.807,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 910,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_3a93ff62d6084b69a281abda52363972",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 914.733,
+        "warnings": []
+      }
+    ],
+    "timeout_recovery": {
+      "counts_as_model_performance": false,
+      "injection": "adapter_timeout_once_control",
+      "recovery": {
+        "api_latency_ms": 915,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_43122f0f59c44169ad32adb8510c254d",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 917.699,
+        "warnings": []
+      },
+      "timeout": {
+        "api_latency_ms": null,
+        "error": {
+          "code": "INFERENCE_TIMEOUT",
+          "details": {},
+          "message": "inference exceeded 8s",
+          "request_id": "req_2ec6cf52790947b7a123b74d1fc39476"
+        },
+        "model": null,
+        "objects": [],
+        "reason": null,
+        "request_id": "req_2ec6cf52790947b7a123b74d1fc39476",
+        "result": null,
+        "status_code": 504,
+        "uncertain": null,
+        "wall_latency_ms": 6.49,
+        "warnings": []
+      }
+    },
+    "version": {
+      "body": {
+        "api": "v1",
+        "code": "phase5-real-final",
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "runtime": {
+          "degraded": false,
+          "fallback_reason": null,
+          "requested_mode": "real",
+          "selected_mode": "real"
+        },
+        "schema_version": "1.0.0",
+        "service": "multimodal-vision-service"
+      },
+      "request_id": "req_145909475d154a45a98e1bd84036f131",
+      "status_code": 200,
+      "wall_latency_ms": 0.627
+    },
+    "warmup": [
+      {
+        "api_latency_ms": 1194,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_56363f54b6be47319c82a920f08d9fa4",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1198.728,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 1600,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_fb1d7e5b508b4e2a9960989a6b925376",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1603.272,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 1550,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_cea09d23d02a4c439b5172ef7553a93b",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1553.59,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 1479,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_6ad2d67ce38248d1a91928d850f18ff1",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1482.983,
+        "warnings": []
+      },
+      {
+        "api_latency_ms": 1479,
+        "error": null,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit"
+        },
+        "objects": [],
+        "reason": "图像中未发现任何不符合要求的区域。所有元素均符合要求，且无证据框。",
+        "request_id": "req_83ebcec8b3e148e1b9b226e3ff3ff04b",
+        "result": "compliant",
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1483.459,
+        "warnings": []
+      }
+    ]
+  },
+  "protocol": {
+    "inference_timeout_seconds": 8.0,
+    "initial_analyze_runs": 1,
+    "measured_runs": 30,
+    "transport": "real_uvicorn_http",
+    "warmup_runs": 5
+  },
+  "quality_qualification": {
+    "eligible": false,
+    "external_evidence": "docs/model/phase5_real_model_report.md",
+    "status": "failed_external_algorithm_probe"
+  },
+  "registry": {
+    "aliases": {
+      "active": "qwen3-vl-2b-instruct-4bit"
+    },
+    "audit_sequence": 1,
+    "models": [
+      {
+        "adapter": null,
+        "base": "qwen3-vl-2b-instruct-4bit",
+        "config_fingerprint": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+        "model_fingerprint": "3817a1f046d88b69acfbd05b2b7e9caf5c2c4d6383984bbd60f238f472c4df83",
+        "model_id": "qwen3-vl-2b-instruct-4bit",
+        "quantization": "4-bit",
+        "ready": true,
+        "source": "model-config:qwen3_vl_2b_mlx_4bit.json",
+        "state": "active",
+        "weight_hash": null
+      }
+    ],
+    "runtime": {
+      "degraded": false,
+      "fallback_reason": null,
+      "requested_mode": "real",
+      "selected_mode": "real"
+    }
+  },
+  "report_type": "mvis_phase5_real_runtime",
+  "report_version": "1.0.0",
+  "runtime_qualification": {
+    "auto_fallback_allowed": false,
+    "mock_used": false,
+    "real_ready": true,
+    "requested_mode": "real"
+  },
+  "sample": {
+    "bytes": 66875,
+    "format": "png",
+    "height": 380,
+    "name": "system_architecture.png",
+    "options": {
+      "max_tokens": 128,
+      "seed": 20260808,
+      "temperature": 0
+    },
+    "query": "找出不符合要求的区域，并给出可核验的证据框。",
+    "sha256": "aef0bd7e638f932dd57fd2701fe0b57dae689b595cbd6ac605c64d38d4530343",
+    "task": "inspect",
+    "width": 750
+  },
+  "status": "passed",
+  "timestamp": "2026-08-08T03:42:26.349188+00:00"
+}

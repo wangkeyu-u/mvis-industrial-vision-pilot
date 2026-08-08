@@ -48,9 +48,7 @@ def registry_with_candidate(*, ready: bool = True) -> ModelRegistry:
             state=ModelState.CANDIDATE,
             source="stage4-test-candidate",
             quantization="none",
-            config_fingerprint=fingerprint_mapping(
-                {"model": "mock-compliance-v1", "version": 1}
-            ),
+            config_fingerprint=fingerprint_mapping({"model": "mock-compliance-v1", "version": 1}),
         )
     )
     return registry
@@ -81,9 +79,7 @@ def test_registry_enforces_validated_gate_atomic_activation_and_rollback() -> No
         "active": "mock-compliance-v1",
         "previous": "mock-compliance-v0",
     }
-    fingerprints = {
-        item["model_id"]: item["model_fingerprint"] for item in activated["models"]
-    }
+    fingerprints = {item["model_id"]: item["model_fingerprint"] for item in activated["models"]}
     assert all(re.fullmatch(r"[0-9a-f]{64}", value) for value in fingerprints.values())
 
     registry.rollback(
@@ -367,12 +363,8 @@ def test_concurrency_queue_rejects_overflow_then_recovers(settings) -> None:
         transport = httpx.ASGITransport(app=app)
         form = {"query": "inspect"}
         files = {"image": ("safe.jpg", image_bytes(), "image/jpeg")}
-        async with httpx.AsyncClient(
-            transport=transport, base_url="http://test"
-        ) as client:
-            first = asyncio.create_task(
-                client.post("/v1/analyze", data=form, files=files)
-            )
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            first = asyncio.create_task(client.post("/v1/analyze", data=form, files=files))
             await asyncio.sleep(0.01)
             overflow = await client.post("/v1/analyze", data=form, files=files)
             completed = await first

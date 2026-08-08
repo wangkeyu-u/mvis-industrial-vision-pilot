@@ -19,14 +19,30 @@ def generate_data_card(
     *,
     title: str = "Visual Compliance Dataset",
     fixture_only: bool = False,
+    pilot_only: bool = False,
 ) -> str:
     total = int(statistics.get("total_samples", 0))
-    hard_negative_rate = float(statistics.get("hard_negative_rate", 0.0))
+    hard_negative_count = int(
+        statistics.get("test_hard_negative_count", statistics.get("hard_negative_count", 0))
+    )
+    hard_negative_rate = float(
+        statistics.get("test_hard_negative_rate", statistics.get("hard_negative_rate", 0.0))
+    )
+    hard_negative_scope = (
+        "Frozen-test hard negatives"
+        if "test_hard_negative_rate" in statistics
+        else "Hard negatives"
+    )
     watermark = (
         "> **SYNTHETIC FIXTURE — NOT TRAINING OR MODEL EVALUATION DATA**\n\n"
         if fixture_only
         else ""
     )
+    if pilot_only:
+        watermark += (
+            "> **PILOT DATASET — TEST SPLIT BELOW THE FORMAL KPI SAMPLE FLOOR; "
+            "DO NOT REPORT FORMAL KPI ACCEPTANCE**\n\n"
+        )
     limitations = []
     if total < 300:
         limitations.append(
@@ -44,7 +60,7 @@ def generate_data_card(
 - Created at: `{manifest.created_at}`
 - Frozen test set: `{str(manifest.frozen_test).lower()}`
 - Total samples: {total}
-- Hard negatives: {statistics.get('hard_negative_count', 0)} ({hard_negative_rate:.1%})
+- {hard_negative_scope}: {hard_negative_count} ({hard_negative_rate:.1%})
 
 ## Intended use
 

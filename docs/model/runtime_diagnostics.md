@@ -30,7 +30,7 @@ python3 -m src.inference.diagnostics --compact --require-ready
 - 精确 revision 对应的本地 snapshot 路径、配置文件和 safetensors 状态；
 - readiness 原因和结构化性能状态。
 
-2026-08-08 本机结果为 `unavailable`：MLX 与 MLX-VLM 未安装，且固定 revision 的 MLX 4-bit snapshot 不存在。诊断正确返回 exit code 2，性能字段为：
+2026-08-08 第五阶段本机结果为 `ready`：MLX 0.32.0、mlx-vlm 0.6.10 和固定 revision 的 MLX 4-bit snapshot 均就绪，`--require-ready` 返回 exit code 0。诊断命令本身仍不运行探针，因此其性能字段保持：
 
 ```json
 {
@@ -43,7 +43,7 @@ python3 -m src.inference.diagnostics --compact --require-ready
 }
 ```
 
-这不是测试失败，而是防止把 mock 或不完整缓存的结果冒充真实模型性能。
+这不是性能缺失；诊断是只读 readiness 命令。真实单/多图数据由 `src.inference.real_probe` 单独记录，见 `phase5_real_model_report.md`。
 
 ## 缓存门禁
 

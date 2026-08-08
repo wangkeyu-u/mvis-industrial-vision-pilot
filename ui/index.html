@@ -27,6 +27,7 @@
             <small id="client-mode">readiness 预检</small>
           </span>
         </div>
+        <button id="real-acceptance-toggle" class="real-acceptance-toggle" type="button" aria-pressed="false" aria-controls="real-acceptance-bar">真实模型验收</button>
         <button id="toggle-evaluation" class="portfolio-toggle" type="button" aria-expanded="false" aria-controls="evaluation-panel">评测证据</button>
         <span class="divider" aria-hidden="true"></span>
         <span>图片不持久化</span>
@@ -34,6 +35,29 @@
         <span>Schema 1.0</span>
       </div>
     </header>
+
+    <section id="real-acceptance-bar" class="real-acceptance-bar" data-state="blocked" aria-labelledby="real-acceptance-heading" hidden>
+      <div class="real-acceptance-seal" id="real-acceptance-seal">REAL SCORE CAPTURE BLOCKED</div>
+      <div class="real-acceptance-copy">
+        <p class="eyebrow">REAL MODEL ACCEPTANCE GATE</p>
+        <h2 id="real-acceptance-heading">真实链路证据闸门</h2>
+        <p id="real-acceptance-message" role="alert">等待 /health/ready 证明 selected_mode=real 且 degraded=false。</p>
+      </div>
+      <dl class="real-acceptance-facts">
+        <div><dt>READINESS REQUEST</dt><dd id="real-readiness-request">—</dd></div>
+        <div><dt>MODEL / REVISION</dt><dd id="real-model-revision">—</dd></div>
+        <div><dt>MODE</dt><dd id="real-runtime-mode">—</dd></div>
+      </dl>
+      <div class="real-acceptance-actions">
+        <button id="refresh-real-acceptance" type="button">重新预检</button>
+        <a id="download-real-gate" aria-disabled="true">导出阻塞报告</a>
+        <button id="exit-real-acceptance" type="button">退出验收模式</button>
+      </div>
+    </section>
+    <div id="real-screenshot-blocker" class="real-screenshot-blocker" aria-hidden="true" hidden>
+      <strong>REAL SCORE CAPTURE BLOCKED</strong>
+      <span>READINESS 未证明真实、非降级模型链路</span>
+    </div>
 
     <main id="workspace" class="workspace">
       <section class="control-panel" aria-labelledby="task-heading">
@@ -57,7 +81,10 @@
             <span id="file-meta"></span>
           </div>
         </div>
-        <button id="demo-sample" class="sample-action" type="button">载入内置演示图</button>
+        <div class="sample-actions">
+          <button id="demo-sample" class="sample-action" type="button">载入内置演示图</button>
+          <button id="licensed-probe" class="sample-action is-licensed" type="button" hidden>载入许可 Probe</button>
+        </div>
 
         <label class="field-label" for="query-input">审查要求</label>
         <textarea id="query-input" rows="4" maxlength="1000" placeholder="例如：找出未佩戴安全帽的人员，并标出证据区域。">找出不符合安全要求的区域，并说明原因。</textarea>

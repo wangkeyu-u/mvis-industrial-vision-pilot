@@ -26,6 +26,10 @@ FIXTURE_NOTICE = (
     "pipeline and must not be reported as model performance."
 )
 MOCK_NOTICE = "This package contains mock outputs and must not be reported as model performance."
+PILOT_NOTICE = (
+    "This package uses a pilot dataset whose frozen test split is below the formal KPI "
+    "sample floor. Metrics are exploratory and must not be reported as formal KPI acceptance."
+)
 
 
 @dataclass(frozen=True)
@@ -34,6 +38,7 @@ class EvaluationPackageExport:
     component_hashes: Mapping[str, str]
     fixture_only: bool
     mock_only: bool
+    pilot_only: bool
 
 
 def _sha256(path: Path) -> str:
@@ -177,6 +182,10 @@ def export_evaluation_package(
         raise ValueError("data manifest must contain valid JSON") from exc
     if not isinstance(manifest_value, Mapping):
         raise ValueError("data manifest must be a JSON object")
+    manifest_statistics = manifest_value.get("statistics", {})
+    if not isinstance(manifest_statistics, Mapping):
+        raise ValueError("data manifest statistics must be an object")
+    pilot_only = manifest_statistics.get("formal_kpi_eligible") is False
 
     intervals = bootstrap_confidence_intervals(
         report,
@@ -190,6 +199,7 @@ def export_evaluation_package(
         thresholds=thresholds,
         fixture_only=fixture_only,
         mock_only=mock_only,
+        pilot_only=pilot_only,
     )
     config = dict(resolved_config) | {
         "confidence": {
@@ -201,6 +211,7 @@ def export_evaluation_package(
         "kpi_thresholds": thresholds.to_dict(),
         "fixture_only": fixture_only,
         "mock_only": mock_only,
+        "pilot_only": pilot_only,
     }
     data_provenance = {
         "manifest_filename": manifest_path.name,
@@ -208,11 +219,25 @@ def export_evaluation_package(
         "dataset_version": manifest_value.get("dataset_version"),
         "schema_version": manifest_value.get("schema_version"),
         "frozen_test": manifest_value.get("frozen_test"),
+        "evaluation_status": manifest_statistics.get("evaluation_status"),
+        "formal_kpi_eligible": manifest_statistics.get("formal_kpi_eligible"),
+        "formal_kpi_ineligibility_reason": manifest_statistics.get(
+            "formal_kpi_ineligibility_reason"
+        ),
     }
-    score_notice = FIXTURE_NOTICE if fixture_only else MOCK_NOTICE if mock_only else None
+    score_notice = (
+        FIXTURE_NOTICE
+        if fixture_only
+        else MOCK_NOTICE
+        if mock_only
+        else PILOT_NOTICE
+        if pilot_only
+        else None
+    )
     metrics = {
         "fixture_only": fixture_only,
         "mock_only": mock_only,
+        "pilot_only": pilot_only,
         "fixture_notice": score_notice,
         "summary": dict(report.summary),
         "confidence_intervals": {
@@ -239,6 +264,7 @@ def export_evaluation_package(
             comparison=comparison,
             fixture_only=fixture_only,
             mock_only=mock_only,
+            pilot_only=pilot_only,
         ),
         "report.html": render_html_report(
             report,
@@ -247,6 +273,7 @@ def export_evaluation_package(
             comparison=comparison,
             fixture_only=fixture_only,
             mock_only=mock_only,
+            pilot_only=pilot_only,
         ),
     }
 
@@ -266,6 +293,7 @@ def export_evaluation_package(
                 "created_at": created_at,
                 "fixture_only": fixture_only,
                 "mock_only": mock_only,
+                "pilot_only": pilot_only,
                 "fixture_notice": score_notice,
                 "component_sha256": hashes,
             },
@@ -274,4 +302,4 @@ def export_evaluation_package(
     except BaseException:
         shutil.rmtree(staging, ignore_errors=True)
         raise
-    return EvaluationPackageExport(destination, hashes, fixture_only, mock_only)
+    return EvaluationPackageExport(destination, hashes, fixture_only, mock_only, pilot_only)

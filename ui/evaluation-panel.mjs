@@ -227,7 +227,7 @@ function renderPortfolio(elements, portfolio) {
   renderFailures(elements, portfolio);
 }
 
-export function initializeEvaluationPanel({ getReadiness, refreshReadiness }) {
+export function initializeEvaluationPanel({ getReadiness, refreshReadiness, onPortfolioChange = () => {} }) {
   const elements = elementMap();
   let importSequence = 0;
 
@@ -241,6 +241,7 @@ export function initializeEvaluationPanel({ getReadiness, refreshReadiness }) {
     elements.evaluation_empty.hidden = false;
     if (message) elements.evaluation_empty.querySelector("p").textContent = message;
     elements.evaluation_watermark.hidden = true;
+    onPortfolioChange(null);
   };
   const setBusy = (busy) => {
     elements.evaluation_panel.setAttribute("aria-busy", String(busy));
@@ -250,6 +251,7 @@ export function initializeEvaluationPanel({ getReadiness, refreshReadiness }) {
   const acceptPortfolio = (portfolio, token) => {
     if (token !== importSequence) return;
     renderPortfolio(elements, portfolio);
+    onPortfolioChange(portfolio);
     showAlert();
   };
   const failImport = (error, token) => {

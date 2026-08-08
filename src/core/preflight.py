@@ -92,17 +92,13 @@ def run_preflight(
         model_ready,
         required=True,
         runtime=runtime,
-        active_model=(
-            registry.active().public_status() if registry.active() is not None else None
-        ),
+        active_model=(registry.active().public_status() if registry.active() is not None else None),
     )
     if model_ready and runtime["degraded"]:
         model_check["status"] = "degraded"
     checks.append(model_check)
 
-    required_failures = [
-        item for item in checks if item["required"] and item["status"] == "fail"
-    ]
+    required_failures = [item for item in checks if item["required"] and item["status"] == "fail"]
     degraded = any(item["status"] == "degraded" for item in checks)
     can_serve = not required_failures
     production_ready = bool(
@@ -136,9 +132,7 @@ def physical_memory_mb() -> float | None:
     return round((pages * page_size) / (1024 * 1024), 2)
 
 
-def _check(
-    name: str, passed: bool, *, required: bool, **details: Any
-) -> dict[str, Any]:
+def _check(name: str, passed: bool, *, required: bool, **details: Any) -> dict[str, Any]:
     return {
         "name": name,
         "status": "pass" if passed else "fail",

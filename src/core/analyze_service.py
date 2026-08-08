@@ -53,9 +53,7 @@ class AnalyzeService:
                     command.image, command.image_content_type or "", self.settings
                 )
             else:
-                image_bytes, image_meta = await validate_upload(
-                    command.image, self.settings
-                )  # type: ignore[arg-type]
+                image_bytes, image_meta = await validate_upload(command.image, self.settings)  # type: ignore[arg-type]
         except MemoryError as exc:
             raise ServiceError(
                 ErrorCode.RESOURCE_EXHAUSTED,

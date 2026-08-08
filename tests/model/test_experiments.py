@@ -31,8 +31,10 @@ class ExperimentMatrixTests(unittest.TestCase):
         self.assertTrue(all(spec.status.value == "not_run" for spec in specs))
 
     def test_dry_run_separates_schema_validity_from_readiness(self) -> None:
-        unavailable = validate_experiment_matrix(generate_default_matrix(CONFIG))
         with tempfile.TemporaryDirectory() as directory:
+            unavailable = validate_experiment_matrix(
+                generate_default_matrix(CONFIG), cache_root=directory
+            )
             config = json.loads(CONFIG.read_text(encoding="utf-8"))
             snapshot = (
                 Path(directory)

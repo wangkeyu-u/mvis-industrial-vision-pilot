@@ -68,11 +68,11 @@ assert adapter.ready
 
 ## 本机缓存检查
 
-目标缓存 `~/.cache/huggingface/hub/models--mlx-community--Qwen3-VL-2B-Instruct-4bit` 不存在。仅发现原始 `Qwen/Qwen3-VL-2B-Instruct` 的部分缓存元数据，不能代替 MLX 4-bit 固定 revision 快照。因此本阶段按约束跳过真实单图探针，没有触发网络下载。
+第五阶段已将 `mlx-community/Qwen3-VL-2B-Instruct-4bit` 的固定 revision `9c4f5209e57b31f4b9dfba735de3fb983739c9cc` 下载到 Hugging Face 缓存。快照包含 `config.json` 和 `model.safetensors`，诊断状态为 complete/ready；权重 SHA-256 见第五阶段报告。
 
 ## 测试证据
 
-- `tests/model`：51/51 通过，无跳过；
+- `tests/model`：53/53 通过，无跳过；
 - `tests/api/test_analyze.py`：28/28 通过；
 - registry/readiness 相关测试：3/3 通过；
 - 全量相关 API 文件：36/36 通过；执行期间曾捕获 `/version` 的并行契约更新窗口，后端补齐 `runtime` 后复测已恢复全绿；

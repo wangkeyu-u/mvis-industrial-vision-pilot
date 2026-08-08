@@ -1,108 +1,86 @@
-# 视觉合规审查：8–9 分钟面试演示脚本
+# 视觉合规审查：最终 8–10 分钟面试演示脚本
 
-目标：在 5–10 分钟内证明这不是“模型套壳”，而是具有证据定位、结构化协议、拒答策略、端侧约束和可替换接口的算法系统。演示中的 Mock 只验证产品与接口，不宣称算法指标。
+目标：证明真实模型、Mock、评测 fixture 和正式模型成绩是四类不同证据；任何一类都不能冒充另一类。
 
-## 演示前 2 分钟检查（不计入正式演示）
+## 演示前检查（不计时）
 
-1. 在项目根目录运行 `python3 app/run_demo.py --open`。
-2. 等待终端显示 `readiness 通过`和演示地址；不要跳过预检。
-3. 主流程使用 `/?client=api`；如需对比，另开 `/` 展示“离线 Mock”。
-4. 默认页头应显示“FastAPI 就绪 · 模型替身”。这是真实 FastAPI 链路，不是真实 Qwen3-VL 效果。
+1. 按 `docs/qa/phase5_real_e2e_report.md` 启动 real FastAPI 和同源 UI。
+2. 打开 `/?client=api&acceptance=real&timeout_ms=120000`。
+3. 只有页面显示绿色 `REAL MODEL EVIDENCE` 才继续真实链路；出现红色阻断层时，直接进入“阻塞演示”，不要切到 Mock 冒充。
+4. 确认 `data/processed/ksdd_v0/probe_manifest.json` 存在；“载入许可 Probe”会在浏览器端复核许可证、归属和 SHA-256。若按钮不可用，直接展示阻塞报告，不手工绕过。
 
-## 0:00–0:45｜一句话问题与约束
+## 0:00–0:50｜问题、设备与证据原则
 
-操作：停留在空状态页面。
+> 这是面向视觉合规审查的端侧多模态系统：单张图片加自然语言要求，输出结论、原图像素证据框、解释、不确定性和结构化 JSON。目标设备是 16GB Apple Silicon，候选路线是 Qwen3-VL-2B 4-bit。今天重点不只是“模型能回答”，而是每个结果能否证明来自哪条链路。
 
-讲述：
+指出“图片不持久化”、Schema 和 readiness 状态。
 
-> 这是一个面向视觉合规审查的轻量多模态系统。用户上传单张图片，用自然语言提出检查要求；系统返回结论、原图像素证据框、解释、不确定性和可机器消费的 JSON。目标环境是 M5 MacBook Air 16GB，所以主路线是 Qwen3-VL-2B 4-bit 加领域 LoRA，而不是依赖云端大模型。
+## 0:50–1:45｜真实验收闸门
 
-强调页头的“图片不持久化”和黄色降级标记：产品层已经把隐私边界与演示证据边界显式化。
+指向绿色验收条：
 
-## 0:45–2:10｜主流程与证据定位
+> 这个标记不是 URL 参数直接点亮的。页面重新请求 `/health/ready`，严格要求 selected_mode=real、degraded=false、active 模型 ready，且来源不能带 Mock/Test Double。readiness request_id、模型指纹、量化和 revision 都进入证据；后端没有返回 revision 时明确写 not_reported。
 
-操作：点击“载入内置演示图”，保留默认“违规”查询和 `active`，点击“开始审查”。
+如当前未解锁：展示覆盖式 `REAL SCORE CAPTURE BLOCKED` 和导出的阻塞 JSON，然后跳到 7:20。
 
-讲述：
+## 1:45–3:20｜许可图片、请求与 JSON
 
-> 结果不仅给出违规判断，还返回 `[x1,y1,x2,y2]` 原图像素坐标、置信度与来源。置信度同时显示在图片标签和可读取的证据卡里。UI 按图片实际渲染尺寸换算叠加框；窗口缩放时会重新计算，所以导出的坐标不依赖截图尺寸。模型、适配器、量化、端到端耗时和 request_id 与本次结果绑定。
+操作：点击“载入许可 Probe”。页面显示 `ksdd_kos10_part3`、`cc-by-nc-sa-4.0` 和 500×1273；再次点击可在三个缺陷 Probe 间循环。提交一次审查。
 
-操作：缩窄再放宽浏览器，指出边界框仍贴合；点击“导出 JSON”。
+> 演示服务只暴露 manifest allowlist。浏览器先校验文件类型、签名和 SHA-256，再以 multipart 经同源代理进入真实 FastAPI。sample_id、license、attribution 和 hash 进入验收证据；图片字节不进入证据 JSON。结果中的 request_id 同时出现在页面、JSON、HTTP 响应和后端日志。
 
-补充：当前结果由 FastAPI 后的确定性 demo adapter 生成，用于验证产品与契约；真实模型接入后 UI 仍消费相同 `/v1` Schema。
+本次实测如实展示：三个缺陷 Probe 分别出现 422 或拒答/不确定，`objects=[]`。点击“导出 JSON”和“导出验收证据”。
 
-## 2:10–3:20｜幻觉控制：不确定与拒答
+> manifest 里有真值框，不代表模型返回了框。产品层绝不把真值框画成预测框，所以当前定位验收是阻塞，而不是通过。
 
-操作：依次点击“不确定”和“拒答”快捷场景并运行。
+## 3:20–4:25｜拒答、不确定与陈旧结果防护
 
-讲述：
+指出许可 Probe 的 `refused`、`uncertain=true` 和无对象框；然后加载下一 Probe，展示新请求开始时旧结果立即清空。说明独立不确定回归结果：
 
-> 合规审查最危险的不是少显示一个动画，而是在没有证据时强行给结论。低质量或遮挡输入进入 `uncertain`，高风险或超用途请求进入 `refused`；两者都必须返回空对象数组，不伪造边界框，并提供可行动的人工复核说明。这直接对应困难负例假阳性率和证据—结论一致率两类验收指标。
+> 拒答/不确定链路已真实通过；另一个样例暴露结构化输出 422。UI 清空旧框、旧 JSON 和 readiness 绑定，没有用 Mock 填补。失败本身也是可导出的验收证据。
 
-## 3:20–4:05｜可观测错误而非静默失败
+## 4:25–5:10｜模型与 revision 证据边界
 
-操作：点击“错误”并运行；主按钮变成“取消请求”后立即点击。
+> readiness 已记录 active 模型、4-bit、config/model fingerprint，但当前 API 没有返回 revision。只读配置知道固定 revision，不等于本次响应携带 revision，所以导出文件保留 not_reported。这是待后端补齐的契约缺口。
 
-讲述：
+展示证据 JSON 中的 readiness request_id、分析 request_id、latency 和 `model_revision`。
 
-> 取消不会被包装成成功。客户端显示 `REQUEST_CANCELLED`，并立即清空上一次的框、证据卡和结果 JSON。如用 `?timeout_ms=300` 重跑慢场景，则得到带 request_id 的 `INFERENCE_TIMEOUT`。
+## 5:10–6:35｜实验对比与失败切片
 
-## 4:05–5:05｜可替换接口
+打开“评测证据”，先展示生命周期诊断，再加载 fixture。
 
-操作：指向页头的 readiness 标识，再打开 `/?client=api&transport=json` 对比一次。
+> 即使当前是真实模型 readiness，fixture 仍然是红色 `FIXTURE / MOCK · 不可用于模型验收`。界面展示零样本/候选、绝对和配对置信区间、KPI、切片与失败案例，但不会因为数字好看就获得模型验收资格。证据导出明确写 `verified=false`、`model_performance_claim_allowed=false`。
 
-讲述：
+快速指向 5 个 KPI、最高失败率切片和 failure code。
 
-> API 页在每次分析前都调用 `/health/ready`。multipart 和 base64 JSON 都经同源代理到真实 FastAPI `/v1/analyze`；request_id 贯穿 UI、代理、FastAPI 日志、响应头和响应体。当前黄色标识表明模型是替身，不能宣称 Qwen3-VL 已推理。
+## 6:35–7:20｜数据许可、pilot 边界与定位阻塞
 
-指出页头、实际 `model`、警告和 TRACE。如面试环境允许，可停止 FastAPI 并再次提交，展示红色“FastAPI 不可用”、`MODEL_NOT_READY`，以及旧框和结果导出已被清除。
+> KSDD V0 已冻结 383 个去重样例，并提供样例级许可、哈希和实体隔离切分。本轮确实使用了登记 Probe。但 test 只有 56 个样例，低于正式 KPI 的 300；更关键的是，三个缺陷 Probe 都没有得到模型框。因此数据准入已通过，模型定位仍阻塞，不能报告 Acc@IoU 或 mAP50。
 
-## 5:05–6:00｜运行诊断与生命周期
+## 7:20–8:10｜降级链路反证
 
-操作：点页头“评测证据”，先不导入报告，指向 Runtime Diagnostics。
+切到 FastAPI mock-adapter 的 `acceptance=real` 页面或展示阻断截图。
 
-讲述：
+> 同一个前端面对 mock-adapter 会识别 selected_mode 非 real、degraded 和 test-double，覆盖整页阻断水印，导出 screenshot_eligible=false。Mock 仍能用于离线演示，但不能留下看起来像真实成绩的截图。
 
-> 评测展示是一个独立审计附录，默认不占用主分析流程。这里从 readiness 直接读取 requested/selected mode、active/candidate 生命周期、ready、source、量化、weight hash、别名和降级原因。当前黄色状态和 `built-in-test-double` 说明不能把当前分析当成真实模型证据。
+## 8:10–9:00｜系统工程能力
 
-## 6:00–7:20｜零样本与候选对比
+> 主流程支持 multipart/JSON、request_id、取消、超时、错误体和陈旧结果防护；评测附录支持哈希校验与失败关闭；真实模式把 readiness 和每次结果绑定。它们共同解决的是“模型输出能不能被审计”，而不只是页面能不能显示答案。
 
-操作：点“加载 fixture 示例”。立即指出顶部红色水印，再展示五行对比表和 KPI 卡。
+## 9:00–10:00｜结论与下一步
 
-讲述：
+> 当前真实 MLX 模型、合法样例上传、拒答/不确定、JSON/证据导出和 fixture 导入都已端到端运行。许可 Probe 拒答约 1.5 秒，但这只是少量观测，不是 P95。最终模型验收还差三件事：修复结构化定位输出并产出真实框、在 API 中绑定 revision、生成非 fixture 的 evaluator 成绩包并达到正式样本门槛。
 
-> 这是 evaluator 契约 fixture，不是模型得分。所以即使表中 Macro-F1 显示 88.9%，水印、KPI 和顶层资格仍全部是 fixture/not eligible。正式 package 会展示零样本和候选的配对变化、bootstrap 区间、有效分母以及样本不足时的 significance hint。完整 package 还要逐一通过 manifest SHA-256；单独 report 因 provenance 不完整永远标记 unverified。
-
-## 7:20–8:10｜切片与失败案例
-
-操作：滚动到 Slices 和 Failure Cases。
-
-讲述：
-
-> 总体指标只是起点。这里把 API/model_result、困难负例等切片按失败率排序，再下钻到 sample_id、truth→prediction 和稳定 failure code。例如 `INVALID_JSON`、`HARD_NEGATIVE_FALSE_POSITIVE`、`BBOX_OUT_OF_BOUNDS` 和 `LOCALIZATION_MISS` 对应的修复路径不同，不应被一个平均分遮住。
-
-## 8:10–8:40｜算法证据边界
-
-操作：点击“导出验收证据”，展示 `readiness`、`outcome`、`result` 和 `stale_result_protection`。
-
-讲述：
-
-> 这份证据把“此次请求是什么运行模式”与结果绑定，并记录错误后是否仍有旧证据。它不嵌入图片字节或查询原文。这些是产品契约和异常闭环证据，不是最终算法效果。后续仍必须在冻结测试集上报告 Macro-F1、Acc@IoU 0.5、假阳性率、P95 延迟与峰值内存。
-
-## 8:40–9:00｜风险与下一步
-
-讲述：
-
-> 当前 UI、同源代理和真实 FastAPI 双进程已联调；默认 active 仍是模型测试替身。最大产品风险是边界框正确显示不代表定位准确；最大端侧风险是 M5/16GB 的 4-bit 延迟与内存尚未实测；开发用标准库代理也不是生产级取消传播方案。下一步是加载候选模型，在同一 M5 设备上完成 30 次性能测试和 100 次稳定性测试，再用冻结集替换演示结果。
+补充自动化证据：产品/质量范围 52/52 通过，包括 15 个服务/代理/许可路由集成、8 个 UI 契约、24 个客户端/评测/闸门用例和 5 个真实网络 E2E。
 
 收尾：
 
-> 这套界面的价值不是美化结果，而是让结论、证据、版本、耗时、不确定性和失败都能被看见、导出和追踪。
+> 这套系统最重要的能力，是让真实、降级、Mock、fixture、失败和正式成绩在界面与导出证据中始终不可混淆。
 
 ## 面试官追问速答
 
 - 为什么选 Qwen3-VL-2B？轻量、多任务与定位能力适合端侧候选，但最终选择必须由零样本、微调、量化和兼容性实验共同决定。
 - 为什么还要专用模型？VLM 提供语义与解释，RF-DETR/Florence 提供定位对照或协同；冲突时降置信或拒答，而非无条件融合。
-- 如何证明框正确？UI 只证明坐标映射正确；模型定位能力要用冻结集上的 Acc@IoU 0.5、mAP50 和失败切片证明。
+- 如何证明框正确？当前没有真实模型框，所以明确阻塞；UI 坐标映射通过不等于模型定位通过，最终要用冻结集 Acc@IoU 0.5、mAP50 和失败切片证明。
 - 如何避免泄漏？测试集训练前冻结并按实体去重；失败案例进入隔离复核池，不能直接回流训练。
 - Mock 有什么价值？允许接口、状态、可用性和错误流程先被验收；它不提供任何模型效果证据。

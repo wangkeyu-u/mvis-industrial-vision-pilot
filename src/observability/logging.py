@@ -37,11 +37,7 @@ class JsonFormatter(logging.Formatter):
             "request_id": getattr(record, "request_id", request_id_context.get()),
         }
         for field in REQUIRED_FIELDS:
-            fallback = (
-                getattr(record, "memory_peak_mb", None)
-                if field == "memory_peak"
-                else None
-            )
+            fallback = getattr(record, "memory_peak_mb", None) if field == "memory_peak" else None
             payload[field] = getattr(record, field, fallback)
         if record.exc_info:
             payload["exception_type"] = record.exc_info[0].__name__

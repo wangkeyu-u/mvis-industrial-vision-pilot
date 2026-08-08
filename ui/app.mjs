@@ -1,4 +1,10 @@
 import { AnalysisClientError, createAnalysisClient, validateImageFile } from "/src/client/api-client.mjs";
+import {
+  RealAcceptanceError,
+  buildRealAcceptanceArtifact,
+  evaluateRealAcceptanceGate,
+  requireRealAcceptance,
+} from "/src/client/real-acceptance.mjs";
 import { initializeEvaluationPanel } from "/ui/evaluation-panel.mjs";
 
 const params = new URLSearchParams(window.location.search);
@@ -12,7 +18,7 @@ const requestTimeoutMs = Number.isFinite(configuredTimeout) && configuredTimeout
 const client = createAnalysisClient({ mode: clientMode, endpoint, transport, requestTimeoutMs });
 
 const elements = Object.fromEntries([
-  "image-input", "drop-zone", "demo-sample", "file-summary", "file-name", "file-meta", "query-input",
+  "image-input", "drop-zone", "demo-sample", "licensed-probe", "file-summary", "file-name", "file-meta", "query-input",
   "task-select", "model-select", "specialist-toggle", "form-alert", "analyze-button",
   "preview-image", "overlay-canvas", "image-stage", "stage-empty", "stage-loader",
   "case-state", "result-card", "result-icon", "result-label", "result-reason", "warning-list",
@@ -20,9 +26,13 @@ const elements = Object.fromEntries([
   "model-base", "model-adapter", "latency-total", "latency-detail", "trace-source",
   "request-id", "copy-json", "download-json", "download-evidence", "clear-case", "client-mode",
   "runtime-status", "runtime-label",
+  "real-acceptance-toggle", "real-acceptance-bar", "real-acceptance-seal", "real-acceptance-message",
+  "real-readiness-request", "real-model-revision", "real-runtime-mode", "refresh-real-acceptance",
+  "download-real-gate", "exit-real-acceptance", "real-screenshot-blocker",
 ].map((id) => [id.replaceAll("-", "_"), document.getElementById(id)]));
 
 let selectedFile = null;
+let selectedProbe = null;
 let imageDimensions = null;
 let latestResult = null;
 let latestError = null;
@@ -32,6 +42,11 @@ let controller = null;
 let isAnalyzing = false;
 let requestSequence = 0;
 let evaluationPanel = null;
+let latestEvaluationPortfolio = null;
+let latestRealBinding = null;
+let realAcceptanceRequested = params.get("acceptance") === "real";
+let realAcceptanceGate = evaluateRealAcceptanceGate(null, { clientMode });
+let licensedProbeIndex = 0;
 
 const statePresentation = {
   idle: ["—", "尚未运行审查", "等待输入"],
@@ -50,6 +65,7 @@ function setRuntimeStatus(readiness) {
     ? `${transport} · ${endpoint} · ${readiness.detail}`
     : readiness.detail;
   evaluationPanel?.updateReadiness(readiness);
+  updateRealAcceptanceSurface();
 }
 
 async function refreshReadiness({ signal } = {}) {
@@ -81,6 +97,73 @@ async function refreshReadiness({ signal } = {}) {
     };
     setRuntimeStatus(readiness);
     throw error;
+  }
+}
+
+function gateReasonText(gate) {
+  return gate.allowed
+    ? "readiness 已证明 selected_mode=real、degraded=false，active 模型处于 READY。"
+    : gate.reasons.map((reason) => `${reason.code} · ${reason.message}`).join(" ");
+}
+
+function prepareRealGateExport() {
+  elements.download_real_gate.removeAttribute("href");
+  elements.download_real_gate.removeAttribute("download");
+  elements.download_real_gate.setAttribute("aria-disabled", "true");
+  if (!realAcceptanceRequested) return;
+  const result = latestRealBinding?.gate?.allowed ? latestResult : null;
+  const artifact = buildRealAcceptanceArtifact({
+    readiness: latestRealBinding?.readiness || latestReadiness,
+    clientMode,
+    result,
+    evaluation: latestEvaluationPortfolio,
+    input: selectedProbe,
+  });
+  const json = JSON.stringify(artifact, null, 2);
+  elements.download_real_gate.href = `data:application/json;charset=utf-8,${encodeURIComponent(json)}`;
+  elements.download_real_gate.download = `${artifact.observation?.request_id || artifact.gate.readinessRequestId || "real-acceptance"}-${artifact.status}.json`;
+  elements.download_real_gate.textContent = artifact.status === "blocked" ? "导出阻塞报告" : "导出真实链路证据";
+  elements.download_real_gate.setAttribute("aria-disabled", "false");
+}
+
+function updateRealAcceptanceSurface() {
+  realAcceptanceGate = evaluateRealAcceptanceGate(latestReadiness, { clientMode });
+  elements.real_acceptance_toggle.setAttribute("aria-pressed", String(realAcceptanceRequested));
+  elements.licensed_probe.hidden = !realAcceptanceRequested;
+  elements.licensed_probe.disabled = realAcceptanceRequested && !realAcceptanceGate.allowed;
+  elements.real_acceptance_bar.hidden = !realAcceptanceRequested;
+  elements.real_screenshot_blocker.hidden = !realAcceptanceRequested || realAcceptanceGate.allowed;
+  document.body.dataset.realAcceptance = realAcceptanceRequested
+    ? realAcceptanceGate.allowed ? "verified" : "blocked"
+    : "off";
+  if (!realAcceptanceRequested) {
+    prepareRealGateExport();
+    return;
+  }
+  elements.real_acceptance_bar.dataset.state = realAcceptanceGate.state;
+  elements.real_acceptance_seal.textContent = realAcceptanceGate.label;
+  elements.real_acceptance_message.textContent = gateReasonText(realAcceptanceGate);
+  elements.real_readiness_request.textContent = realAcceptanceGate.readinessRequestId || "not reported";
+  elements.real_model_revision.textContent = realAcceptanceGate.model
+    ? `${realAcceptanceGate.model.modelId || realAcceptanceGate.model.base || "unknown"} @ ${realAcceptanceGate.model.revision || "revision not reported"}`
+    : "active model not reported";
+  elements.real_runtime_mode.textContent = `${realAcceptanceGate.selectedMode} · degraded=${String(realAcceptanceGate.degraded)}`;
+  prepareRealGateExport();
+}
+
+async function setRealAcceptanceRequested(requested) {
+  realAcceptanceRequested = requested;
+  latestRealBinding = null;
+  const url = new URL(window.location.href);
+  if (requested) url.searchParams.set("acceptance", "real");
+  else url.searchParams.delete("acceptance");
+  window.history.replaceState({}, "", url);
+  updateRealAcceptanceSurface();
+  if (!requested) return;
+  try {
+    await refreshReadiness();
+  } catch {
+    // The locked gate and its exportable report are the intended failure surface.
   }
 }
 
@@ -146,6 +229,14 @@ function prepareAcceptanceExport(outcome) {
       runtime: latestReadiness.runtime,
       active_model: latestReadiness.activeModel,
     } : null,
+    real_acceptance: {
+      requested: realAcceptanceRequested,
+      gate: realAcceptanceGate,
+      result_bound_to_real_readiness: Boolean(latestRealBinding?.gate?.allowed),
+      bound_readiness_request_id: latestRealBinding?.readiness?.requestId || null,
+      model_revision: latestResult?.model?.revision || latestResult?.model?.model_revision
+        || latestRealBinding?.gate?.model?.revision || "not_reported",
+    },
     input: {
       file_name: selectedFile?.name || null,
       mime_type: selectedFile?.type || null,
@@ -158,6 +249,7 @@ function prepareAcceptanceExport(outcome) {
       use_specialist: elements.specialist_toggle.checked,
       image_bytes_embedded: false,
       query_text_embedded: false,
+      registered_probe: selectedProbe,
     },
     outcome,
     result: latestResult,
@@ -176,6 +268,7 @@ function prepareAcceptanceExport(outcome) {
 function clearDisplayedOutcome(reason = "等待当前请求返回新证据。") {
   latestResult = null;
   latestError = null;
+  latestRealBinding = null;
   resetJsonExport();
   resetAcceptanceExport();
   elements.warning_list.replaceChildren();
@@ -191,7 +284,7 @@ function clearDisplayedOutcome(reason = "等待当前请求返回新证据。") 
   drawBoxes([]);
 }
 
-async function selectFile(file) {
+async function selectFile(file, probe = null) {
   showAlert();
   try {
     await validateImageFile(file);
@@ -208,6 +301,7 @@ async function selectFile(file) {
   elements.analyze_button.lastElementChild.textContent = "⌘ ↵";
   if (previewUrl) URL.revokeObjectURL(previewUrl);
   selectedFile = file;
+  selectedProbe = probe;
   imageDimensions = null;
   previewUrl = URL.createObjectURL(file);
   elements.preview_image.src = previewUrl;
@@ -220,7 +314,10 @@ async function selectFile(file) {
   clearDisplayedOutcome("图片已就绪；提交后将按原图像素坐标绘制证据框。");
   elements.preview_image.onload = () => {
     imageDimensions = { width: elements.preview_image.naturalWidth, height: elements.preview_image.naturalHeight };
-    elements.file_meta.textContent = `${imageDimensions.width} × ${imageDimensions.height} · ${formatBytes(file.size)}`;
+    elements.file_meta.textContent = [
+      `${imageDimensions.width} × ${imageDimensions.height} · ${formatBytes(file.size)}`,
+      probe ? `${probe.sampleId} · ${probe.licenseId}` : null,
+    ].filter(Boolean).join(" · ");
     drawBoxes([]);
   };
 }
@@ -236,6 +333,49 @@ async function loadDemoSample(event) {
     await selectFile(new File([blob], "system_architecture.png", { type: "image/png" }));
   } catch {
     showAlert("内置演示图加载失败，请手动选择图片。");
+  }
+}
+
+async function sha256Hex(blob) {
+  const digest = await crypto.subtle.digest("SHA-256", await blob.arrayBuffer());
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function loadLicensedProbe(event) {
+  event.preventDefault();
+  showAlert();
+  try {
+    requireRealAcceptance(latestReadiness, { clientMode });
+    const manifestResponse = await fetch("/demo/real-probes/manifest.json", { cache: "no-store" });
+    if (!manifestResponse.ok) throw new RealAcceptanceError("PROBE_MANIFEST_UNAVAILABLE", "许可 Probe manifest 尚未就绪。");
+    const manifest = await manifestResponse.json();
+    const violationProbes = (manifest?.probes || []).filter((item) => item?.result === "violation");
+    const candidates = violationProbes.length ? violationProbes : (manifest?.probes || []);
+    const probe = candidates[licensedProbeIndex % Math.max(1, candidates.length)];
+    if (!probe || !/^[a-f0-9]{64}$/.test(probe.sha256 || "") || !probe.license_id || !probe.attribution) {
+      throw new RealAcceptanceError("PROBE_PROVENANCE_INVALID", "Probe 缺少 sample_id、许可证、归属或 SHA-256。");
+    }
+    const name = String(probe.probe_image || "").split("/").pop();
+    const imageResponse = await fetch(`/demo/real-probes/${encodeURIComponent(name)}`, { cache: "no-store" });
+    if (!imageResponse.ok) throw new RealAcceptanceError("PROBE_IMAGE_UNAVAILABLE", "许可 Probe 图片不可用。");
+    const blob = await imageResponse.blob();
+    if (await sha256Hex(blob) !== probe.sha256) {
+      throw new RealAcceptanceError("PROBE_HASH_MISMATCH", "Probe 图片 SHA-256 与 manifest 不一致。");
+    }
+    const extension = name.toLowerCase().split(".").pop();
+    const mimeType = extension === "png" ? "image/png" : extension === "webp" ? "image/webp" : "image/jpeg";
+    await selectFile(new File([blob], name, { type: mimeType }), {
+      sampleId: probe.sample_id,
+      licenseId: probe.license_id,
+      attribution: probe.attribution,
+      sha256: probe.sha256,
+      expectedResult: probe.result,
+      expectedObjects: probe.objects || [],
+    });
+    licensedProbeIndex += 1;
+    elements.query_input.value = "检查该电机换向器表面是否存在可见生产缺陷，并在存在时定位缺陷。";
+  } catch (error) {
+    showAlert(`${error.code || "PROBE_LOAD_FAILED"} · ${error.message || "无法加载许可 Probe。"}`);
   }
 }
 
@@ -286,9 +426,10 @@ function drawBoxes(objects = []) {
   }
 }
 
-function renderResult(result) {
+function renderResult(result, realBinding = null) {
   latestResult = result;
   latestError = null;
+  latestRealBinding = realBinding;
   setState(result.policy_state || result.result, result.reason);
   elements.warning_list.replaceChildren(...(result.warnings || []).map((warning) => {
     const item = document.createElement("p");
@@ -328,14 +469,16 @@ function renderResult(result) {
     result: result.policy_state || result.result,
     uncertain: result.uncertain,
   });
+  prepareRealGateExport();
 }
 
 function renderError(error) {
   latestResult = null;
+  latestRealBinding = null;
   resetJsonExport();
   const code = error.name === "AbortError"
     ? "REQUEST_CANCELLED"
-    : error instanceof AnalysisClientError ? error.code : "INTERNAL_ERROR";
+    : error instanceof AnalysisClientError || error instanceof RealAcceptanceError ? error.code : "INTERNAL_ERROR";
   const message = error.name === "AbortError" ? "请求已取消。" : error.message || "发生未知错误。";
   latestError = {
     kind: error.name === "AbortError" ? "cancelled" : "error",
@@ -353,6 +496,7 @@ function renderError(error) {
   elements.request_id.textContent = error.requestId || "无 request_id";
   drawBoxes([]);
   prepareAcceptanceExport(latestError);
+  prepareRealGateExport();
 }
 
 async function analyze() {
@@ -374,7 +518,12 @@ async function analyze() {
   elements.analyze_button.firstElementChild.textContent = "取消请求";
   elements.analyze_button.lastElementChild.textContent = "ESC";
   try {
-    if (clientMode === "api") await refreshReadiness({ signal: controller.signal });
+    const requestReadiness = clientMode === "api"
+      ? await refreshReadiness({ signal: controller.signal })
+      : latestReadiness;
+    const requestGate = realAcceptanceRequested
+      ? requireRealAcceptance(requestReadiness, { clientMode })
+      : null;
     const result = await client.analyze({
       image: selectedFile,
       imageWidth: imageDimensions?.width,
@@ -384,7 +533,10 @@ async function analyze() {
       model: elements.model_select.value,
       useSpecialist: elements.specialist_toggle.checked,
     }, { signal: controller.signal });
-    if (requestToken === requestSequence) renderResult(result);
+    if (requestToken === requestSequence) renderResult(result, requestGate ? {
+      gate: requestGate,
+      readiness: requestReadiness,
+    } : null);
   } catch (error) {
     if (requestToken === requestSequence) renderError(error);
   } finally {
@@ -408,6 +560,7 @@ function clearCase() {
   elements.analyze_button.lastElementChild.textContent = "⌘ ↵";
   if (previewUrl) URL.revokeObjectURL(previewUrl);
   selectedFile = null;
+  selectedProbe = null;
   imageDimensions = null;
   previewUrl = null;
   elements.image_input.value = "";
@@ -435,6 +588,7 @@ elements.drop_zone.addEventListener("keydown", (event) => {
 });
 elements.image_input.addEventListener("change", () => selectFile(elements.image_input.files[0]));
 elements.demo_sample.addEventListener("click", loadDemoSample);
+elements.licensed_probe.addEventListener("click", loadLicensedProbe);
 for (const eventName of ["dragenter", "dragover"]) {
   elements.drop_zone.addEventListener(eventName, (event) => { event.preventDefault(); elements.drop_zone.classList.add("is-dragging"); });
 }
@@ -449,6 +603,13 @@ document.querySelectorAll(".scenario-chip").forEach((button) => button.addEventL
 elements.analyze_button.addEventListener("click", analyze);
 elements.clear_case.addEventListener("click", clearCase);
 elements.copy_json.addEventListener("click", copyJson);
+elements.real_acceptance_toggle.addEventListener("click", () => setRealAcceptanceRequested(!realAcceptanceRequested));
+elements.exit_real_acceptance.addEventListener("click", () => setRealAcceptanceRequested(false));
+elements.refresh_real_acceptance.addEventListener("click", async () => {
+  elements.refresh_real_acceptance.disabled = true;
+  try { await refreshReadiness(); } catch { /* gate renders the failure */ }
+  finally { elements.refresh_real_acceptance.disabled = false; }
+});
 document.addEventListener("keydown", (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key === "Enter") analyze();
   if (event.key === "Escape" && isAnalyzing) controller?.abort();
@@ -458,5 +619,10 @@ new ResizeObserver(() => drawBoxes(latestResult?.objects || [])).observe(element
 evaluationPanel = initializeEvaluationPanel({
   getReadiness: () => latestReadiness,
   refreshReadiness,
+  onPortfolioChange(portfolio) {
+    latestEvaluationPortfolio = portfolio;
+    prepareRealGateExport();
+  },
 });
+updateRealAcceptanceSurface();
 refreshReadiness().catch(() => {});

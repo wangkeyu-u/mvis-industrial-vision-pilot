@@ -160,9 +160,7 @@ def test_disconnect_cancels_mock_and_releases_capacity(settings) -> None:
             return True
 
         with pytest.raises(ServiceError) as captured:
-            await service.analyze(
-                command, "req_cancel", cancellation_check=disconnected
-            )
+            await service.analyze(command, "req_cancel", cancellation_check=disconnected)
         assert captured.value.code is ErrorCode.REQUEST_CANCELLED
         assert adapter.cancelled.is_set()
 
@@ -181,9 +179,7 @@ def test_asgi_disconnect_maps_to_499_and_cancels_adapter(settings) -> None:
             disconnect_poll_seconds=0.001,
         )
         app = create_app(configured, build_mock_registry(adapter))
-        body = json.dumps(
-            {"image": as_data_url(image_bytes()), "query": "inspect"}
-        ).encode()
+        body = json.dumps({"image": as_data_url(image_bytes()), "query": "inspect"}).encode()
         inbound = [
             {"type": "http.request", "body": body, "more_body": False},
             {"type": "http.disconnect"},
@@ -241,12 +237,8 @@ def test_concurrent_request_over_capacity_returns_503(settings) -> None:
         transport = httpx.ASGITransport(app=app)
         form = {"query": "inspect"}
         files = {"image": ("a.jpg", image_bytes(), "image/jpeg")}
-        async with httpx.AsyncClient(
-            transport=transport, base_url="http://test"
-        ) as client:
-            first = asyncio.create_task(
-                client.post("/v1/analyze", data=form, files=files)
-            )
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            first = asyncio.create_task(client.post("/v1/analyze", data=form, files=files))
             await asyncio.sleep(0.02)
             second = await client.post("/v1/analyze", data=form, files=files)
             first_response = await first

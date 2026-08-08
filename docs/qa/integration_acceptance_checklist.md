@@ -36,6 +36,7 @@ node --check ui/app.mjs
 node --check ui/evaluation-panel.mjs
 node --check src/client/api-client.mjs
 node --check src/client/evaluation-report.mjs
+node --check src/client/real-acceptance.mjs
 python3 -m json.tool ui/fixtures/evaluation-package.fixture.json >/dev/null
 ```
 
@@ -107,3 +108,19 @@ python3 -m json.tool ui/fixtures/evaluation-package.fixture.json >/dev/null
 | P4-08 | 可用性 | 默认折叠、Escape 关闭/焦点返还、局部表格滚动、导入错误清空旧 DOM | 契约 + 浏览器通过 |
 
 详细使用见 `docs/demo/evaluation_portfolio_demo.md`，QA 证据见 `docs/qa/phase4_evaluation_portfolio_report.md`。
+
+## 第五阶段真实链路准入
+
+| 编号 | 验收项 | 通过标准 | 当前证据 |
+|---|---|---|---|
+| P5-01 | 真实标记闸门 | 仅 selected_mode=real、degraded=false、active ready 时显示真实标记 | 单测 + 真实浏览器通过 |
+| P5-02 | 降级截图阻断 | mock/degraded/test-double 覆盖醒目水印，导出 screenshot_eligible=false | 浏览器截图 + 导出解析通过 |
+| P5-03 | 真实请求绑定 | readiness request_id、分析 request_id、模型/指纹、耗时进入独立证据 | 浏览器导出解析通过 |
+| P5-04 | JSON 导出 | 真实结果 JSON request_id/模型/耗时与页面一致 | compliant/refused 通过 |
+| P5-05 | 不确定失败关闭 | 超时或结构失败不保留旧框/JSON/真实绑定 | 504/422 浏览器通过 |
+| P5-06 | 评测真值隔离 | real readiness 不会移除 fixture/mock 水印 | 浏览器通过 |
+| P5-07 | 合法样例与定位 | manifest/许可/SHA 通过后运行真实定位样例，预测框必须来自模型 | 样例准入通过；定位阻塞：3 个缺陷 Probe 为 422 或拒答，无模型框 |
+| P5-08 | revision 绑定 | revision 必须来自 readiness 或分析响应 | 阻塞：当前 API 未返回 |
+| P5-09 | 正式模型成绩 | 非 fixture evaluator package 哈希、provenance、样本门槛均通过 | 阻塞：仅 fixture；KSDD pilot test=56，低于 300 |
+
+完整真实证据、request_id 和阻塞项见 `docs/qa/phase5_real_e2e_report.md`。

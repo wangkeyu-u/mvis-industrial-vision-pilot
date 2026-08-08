@@ -176,12 +176,8 @@ class ModelOpsActionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     reason: str = Field(min_length=1, max_length=256)
-    expected_active_model_id: str | None = Field(
-        default=None, min_length=1, max_length=128
-    )
-    expected_active_fingerprint: str | None = Field(
-        default=None, pattern=r"^[0-9a-f]{64}$"
-    )
+    expected_active_model_id: str | None = Field(default=None, min_length=1, max_length=128)
+    expected_active_fingerprint: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
 
     @field_validator("reason")
     @classmethod

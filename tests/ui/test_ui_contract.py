@@ -38,6 +38,11 @@ class UIContractTest(unittest.TestCase):
             "evaluation-kpis",
             "evaluation-slices",
             "evaluation-failures",
+            "real-acceptance-toggle",
+            "real-acceptance-bar",
+            "real-acceptance-seal",
+            "real-screenshot-blocker",
+            "download-real-gate",
         }
         found_ids = set(re.findall(r'id="([^"]+)"', HTML))
         self.assertEqual(required_ids - found_ids, set())
@@ -97,6 +102,18 @@ class UIContractTest(unittest.TestCase):
         self.assertIn('event.key === "Escape"', evaluation)
         self.assertIn("evaluation-panel", CSS)
         self.assertIn("evaluation-watermark", CSS)
+
+    def test_real_acceptance_mode_is_readiness_gated_and_screenshot_blocked(self) -> None:
+        gate = (PROJECT_ROOT / "src" / "client" / "real-acceptance.mjs").read_text(encoding="utf-8")
+        self.assertIn('params.get("acceptance") === "real"', APP)
+        self.assertIn("requireRealAcceptance", APP)
+        self.assertIn("selectedMode !== \"real\"", gate)
+        self.assertIn("runtime.degraded !== false", gate)
+        self.assertIn("REAL SCORE CAPTURE BLOCKED", HTML)
+        self.assertIn('id="licensed-probe"', HTML)
+        self.assertIn("PROBE_HASH_MISMATCH", APP)
+        self.assertIn("real-screenshot-blocker", CSS)
+        self.assertIn("mvis_real_model_acceptance_gate", gate)
 
 
 if __name__ == "__main__":

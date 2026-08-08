@@ -2,6 +2,7 @@ allow:
   identifiers:
     - cc0-1.0
     - cc-by-4.0
+    - cc-by-nc-sa-4.0
     - owned
     - synthetic
 deny:

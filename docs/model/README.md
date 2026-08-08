@@ -1,6 +1,6 @@
 # 模型侧里程碑说明
 
-状态：`mock-validated / real-weights-not-run`  
+状态：`runtime-ready / real-probe-quality-failed`  
 目标环境：M5 MacBook Air，16GB 统一内存  
 默认场景：视觉合规审查
 
@@ -12,6 +12,7 @@
 - `src/inference/service_bridge.py`：对现有异步服务协议的薄转换层；
 - `src/inference/diagnostics.py`：无网络、无权重加载的环境/缓存/readiness 诊断 CLI；
 - `src/inference/performance.py`：预热、P50/P95 和峰值 RSS 的结构化采样接口；
+- `src/inference/real_probe.py`：真实模型单/多图探针，保留原始输出、图片哈希、失败和性能证据；
 - `src/inference/fusion.py`：主 VLM 与 specialist 的审慎融合、冲突拒答和来源追踪；
 - `src/inference/export.py`：批量样本到 evaluator 兼容 JSONL 的原子导出入口；
 - `src/inference/mock_backend.py`：无需权重的确定性闭环；
@@ -39,7 +40,7 @@ python3 -m src.inference.smoke \
   --seed 23
 ```
 
-查看真实运行 readiness；当前无权重时会明确输出 unavailable：
+查看真实运行 readiness；固定 revision 快照完整时当前本机输出 ready：
 
 ```bash
 python3 -m src.inference.diagnostics --compact --require-ready
@@ -66,7 +67,7 @@ result = adapter.analyze(
 
 ## 真实 MLX 接入
 
-当前配置禁止隐式下载。使用真实后端前，先把经过许可与校验的 MLX 权重放到本地，再复制配置并设置：
+当前配置禁止隐式下载。第五阶段已将许可和大小核验后的固定 revision 放入标准 Hugging Face 缓存，因此默认配置可离线解析它。如改用另一个受控的本地目录，复制配置并设置：
 
 ```json
 {
@@ -130,17 +131,17 @@ result = adapter.analyze(
 
 ## 当前证据
 
-2026-08-08 第四阶段使用隔离依赖环境执行 51 个模型侧测试，51 个全部通过且无跳过；相关 API 桥接 36/36 通过，evaluator 全量 27/27 通过。新增覆盖：24 组实验矩阵、dry-run 可运行性分层、`not_run` 证据防伪、主 VLM/specialist 一致与冲突分支、低置信与原拒答保留、单/多 specialist 来源追踪、evaluator 兼容 JSONL 导出以及原子写入。
+2026-08-08 第五阶段在 `.venv` 执行 53 个模型侧测试，53 个全部通过且无跳过；相关 API 桥接 36/36 通过，evaluator 全量 27/27 通过。真实 MLX 诊断 ready，权重哈希、单图与 5 图输出、延迟、进程峰值 RSS 和失败原因见第五阶段报告。
 
-本轮没有下载或运行模型权重，因此以下内容不能宣称已验证：真实精度、JSON 有效率、M5 延迟、峰值内存、100 请求稳定性和量化精度损失。
+真实探针暴露了结论误判、JSON 截断、越界坐标、字段缺失和负例幻觉；因此真实模型质量状态为 failed。100 请求稳定性、正式精度和量化精度损失仍为 `not_run`。
 
 ## 风险与后续门槛
 
 | 风险 | 当前控制 | 下一门槛 |
 |---|---|---|
-| MLX-VLM API/算子兼容性 | 惰性导入、明确未就绪错误 | 锁定根依赖后做单图真实探针 |
-| 16GB 内存与无主动散热 | 4-bit、512 输出 token 硬上限、约 4MP 输入上限、串行 MLX 生成 | 记录冷/热启动、P50/P95、峰值内存 |
-| 权重漂移 | MLX 仓库 revision 固定为 `9c4f520...` | 本地缓存后登记 safetensors SHA-256 |
+| MLX-VLM API/算子兼容性 | mlx-vlm 0.6.10 真实加载和生成已通过 | 锁定依赖并增加真实 smoke 门禁 |
+| 16GB 内存与无主动散热 | 4-bit、512 输出 token 硬上限、串行 MLX 生成 | 用系统级统一内存/交换采样补充进程 RSS |
+| 权重漂移 | revision 固定，safetensors SHA-256 已登记 | 每次发布前重算哈希 |
 | JSON 不稳定 | 强提示、一次围栏修复、严格解析 | 回归集计算 Schema 有效率与修复率 |
 | 定位坐标误差 | 强制原图整数坐标与越界拒绝 | 用标注图验证预处理坐标还原 |
 | QLoRA 可行性未知 | 只提供 batch=1 的探针配置与训练协议 | 小样本最小训练探针，不直接跑正式实验 |
@@ -160,3 +161,4 @@ result = adapter.analyze(
 - 后端兼容性矩阵：[`backend_integration_matrix.md`](backend_integration_matrix.md)
 - 运行诊断与性能采样：[`runtime_diagnostics.md`](runtime_diagnostics.md)
 - 算法实验闭环：[`experiment_workflow.md`](experiment_workflow.md)
+- 第五阶段真实模型报告：[`phase5_real_model_report.md`](phase5_real_model_report.md)

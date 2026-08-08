@@ -60,9 +60,7 @@ class ServiceSettings:
     @classmethod
     def load(cls, path: str | Path | None = None) -> ServiceSettings:
         defaults = cls()
-        resolved = Path(
-            path or os.getenv("MVIS_SERVICE_CONFIG", "configs/service/default.yaml")
-        )
+        resolved = Path(path or os.getenv("MVIS_SERVICE_CONFIG", "configs/service/default.yaml"))
         raw: dict[str, Any] = {}
         if resolved.exists():
             with resolved.open("r", encoding="utf-8") as handle:
@@ -76,9 +74,7 @@ class ServiceSettings:
         cors = raw.get("cors", {})
         resources = raw.get("resources", {})
         observability = raw.get("observability", {})
-        configured_origins = cors.get(
-            "allowed_origins", list(defaults.cors_allowed_origins)
-        )
+        configured_origins = cors.get("allowed_origins", list(defaults.cors_allowed_origins))
         if not isinstance(configured_origins, list) or not all(
             isinstance(origin, str) for origin in configured_origins
         ):
@@ -96,30 +92,20 @@ class ServiceSettings:
                 "MVIS_CODE_VERSION",
                 str(service.get("code_version", defaults.code_version)),
             ),
-            api_schema_version=str(
-                api.get("schema_version", defaults.api_schema_version)
-            ),
+            api_schema_version=str(api.get("schema_version", defaults.api_schema_version)),
             config_path=str(resolved),
             max_image_bytes=int(image.get("max_bytes", defaults.max_image_bytes)),
             max_image_pixels=int(image.get("max_pixels", defaults.max_image_pixels)),
-            max_image_dimension=int(
-                image.get("max_dimension", defaults.max_image_dimension)
-            ),
+            max_image_dimension=int(image.get("max_dimension", defaults.max_image_dimension)),
             inference_timeout_seconds=float(
                 inference.get("timeout_seconds", defaults.inference_timeout_seconds)
             ),
-            concurrency_limit=int(
-                inference.get("concurrency_limit", defaults.concurrency_limit)
-            ),
+            concurrency_limit=int(inference.get("concurrency_limit", defaults.concurrency_limit)),
             concurrency_wait_seconds=float(
-                inference.get(
-                    "concurrency_wait_seconds", defaults.concurrency_wait_seconds
-                )
+                inference.get("concurrency_wait_seconds", defaults.concurrency_wait_seconds)
             ),
             disconnect_poll_seconds=float(
-                inference.get(
-                    "disconnect_poll_seconds", defaults.disconnect_poll_seconds
-                )
+                inference.get("disconnect_poll_seconds", defaults.disconnect_poll_seconds)
             ),
             model_mode=os.getenv(
                 "MVIS_MODEL_MODE", str(model.get("mode", defaults.model_mode))
@@ -132,11 +118,7 @@ class ServiceSettings:
             # never accepted from version-controlled YAML.
             modelops_token=os.getenv("MVIS_MODELOPS_TOKEN"),
             cors_allowed_origins=allowed_origins,
-            memory_budget_mb=int(
-                resources.get("memory_budget_mb", defaults.memory_budget_mb)
-            ),
-            min_disk_free_mb=int(
-                resources.get("min_disk_free_mb", defaults.min_disk_free_mb)
-            ),
+            memory_budget_mb=int(resources.get("memory_budget_mb", defaults.memory_budget_mb)),
+            min_disk_free_mb=int(resources.get("min_disk_free_mb", defaults.min_disk_free_mb)),
             log_level=str(observability.get("log_level", defaults.log_level)),
         )

@@ -95,8 +95,9 @@ def evaluate_kpi_acceptance(
     thresholds: AcceptanceThresholds = AcceptanceThresholds(),
     fixture_only: bool = False,
     mock_only: bool = False,
+    pilot_only: bool = False,
 ) -> AcceptanceReport:
-    """Evaluate all five KPI gates; fixture results are never eligible scores."""
+    """Evaluate all five KPI gates; fixture, mock, and pilot results are ineligible."""
 
     values = {
         name: _metric(metrics, name)
@@ -108,19 +109,23 @@ def evaluate_kpi_acceptance(
             "evidence_conclusion_consistency_rate",
         )
     }
-    if fixture_only or mock_only:
-        status = "fixture_only" if fixture_only else "mock_only"
-        reason = (
-            AcceptanceReason(
+    if fixture_only or mock_only or pilot_only:
+        status = "fixture_only" if fixture_only else "mock_only" if mock_only else "pilot_only"
+        if fixture_only:
+            reason = AcceptanceReason(
                 "FIXTURE_NOT_MODEL_SCORE",
                 "contract fixtures validate evaluation code and must not be reported as model performance",
             )
-            if fixture_only
-            else AcceptanceReason(
+        elif mock_only:
+            reason = AcceptanceReason(
                 "MOCK_NOT_MODEL_SCORE",
                 "mock outputs validate system behavior and must not be reported as model performance",
             )
-        )
+        else:
+            reason = AcceptanceReason(
+                "PILOT_DATASET_BELOW_SAMPLE_FLOOR",
+                "the frozen test split is below its formal KPI sample floor; report pilot results only",
+            )
         assessments = tuple(
             KPIAssessment(kpi_id, metric, status, values[metric], target, None, (reason,))
             for kpi_id, metric, target in (

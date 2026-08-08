@@ -94,6 +94,33 @@ curl -s http://127.0.0.1:8001/v1/models/audit?limit=100 \
 
 错误门禁为：未配置令牌 `MODELOPS_DISABLED`/503、认证失败 `MODELOPS_UNAUTHORIZED`/401、状态或 CAS 冲突 `MODELOPS_CONFLICT`/409。管理令牌头不在开发 CORS allowlist 中，浏览器跨域 UI 不能调用 ModelOps 写接口。
 
+## Phase 5 真实模型验收
+
+真实服务启动会复用 preflight 已加载的 registry，避免因 Uvicorn 模块导入重复加载 4-bit 权重：
+
+```bash
+MVIS_MODEL_MODE=real PYTHONPATH=. .venv/bin/python -m src.api serve \
+  --host 127.0.0.1 --port 8001
+```
+
+一键验收脚本不会安装依赖、不会下载权重、不会切换 auto/mock。它先执行算法 diagnostics；未 ready 时写出可复现的 blocked 报告并退出 2，ready 后才启动真实 Uvicorn，执行 health/version/单图、5 次热身、连续 30 请求、受控超时恢复和进程峰值内存采样：
+
+```bash
+docs/deployment/run_phase5_real_validation.sh
+```
+
+等价 CLI：
+
+```bash
+MVIS_MODEL_MODE=real PYTHONPATH=. .venv/bin/python -m src.api real-validate \
+  --sample assets/system_architecture.png \
+  --warmup-runs 5 --measured-runs 30 \
+  --json-output docs/deployment/phase5_real_runtime_report.json \
+  --markdown-output docs/deployment/phase5_real_runtime_report.md
+```
+
+报告把真实 runtime 性能资格与模型质量资格分开。只有 strict real、30/30 成功、超时后恢复和 12GB 内存预算同时通过时，延迟/内存才标记 eligible；服务样本没有标注，不能据此声称视觉质量达标，必须同时阅读算法侧 `docs/model/phase5_real_model_report.md`。
+
 开发测试额外需要：
 
 ```bash

@@ -1,0 +1,85 @@
+{
+  "artifact_type": "mvis_real_model_acceptance_gate",
+  "schema_version": "1.0",
+  "generated_at": "2026-08-08T03:57:49.433Z",
+  "status": "observed",
+  "screenshot_eligible": true,
+  "model_performance_claim_allowed": false,
+  "gate": {
+    "allowed": true,
+    "state": "verified",
+    "label": "REAL MODEL EVIDENCE",
+    "reasons": [],
+    "readinessRequestId": "req_ui_1786161421710_3ed9b02f89da4d6a",
+    "selectedMode": "real",
+    "degraded": false,
+    "fallbackReason": null,
+    "model": {
+      "modelId": "qwen3-vl-2b-instruct-4bit",
+      "base": "qwen3-vl-2b-instruct-4bit",
+      "adapter": null,
+      "revision": null,
+      "state": "active",
+      "source": "model-config:qwen3_vl_2b_mlx_4bit.json",
+      "quantization": "4-bit",
+      "configFingerprint": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+      "modelFingerprint": "3817a1f046d88b69acfbd05b2b7e9caf5c2c4d6383984bbd60f238f472c4df83",
+      "weightHash": null
+    }
+  },
+  "readiness": {
+    "request_id": "req_ui_1786161421710_3ed9b02f89da4d6a",
+    "ready": true,
+    "state": "real",
+    "runtime": {
+      "requested_mode": "real",
+      "selected_mode": "real",
+      "degraded": false,
+      "fallback_reason": null
+    },
+    "active_model": {
+      "model_id": "qwen3-vl-2b-instruct-4bit",
+      "base": "qwen3-vl-2b-instruct-4bit",
+      "adapter": null,
+      "state": "active",
+      "ready": true,
+      "source": "model-config:qwen3_vl_2b_mlx_4bit.json",
+      "quantization": "4-bit",
+      "weight_hash": null,
+      "config_fingerprint": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+      "model_fingerprint": "3817a1f046d88b69acfbd05b2b7e9caf5c2c4d6383984bbd60f238f472c4df83"
+    }
+  },
+  "input": {
+    "sample_id": "ksdd_kos15_part3",
+    "license_id": "cc-by-nc-sa-4.0",
+    "attribution": "Kolektor Group d.o.o.; Domen Tabernik, Samo Sela, Jure Skvarc, and Danijel Skocaj, Visual Cognitive Systems Laboratory, University of Ljubljana",
+    "sha256": "4e8a18792516e60e3d86913418a0517c3a315e742e757580462d6fd4540f656a",
+    "image_bytes_embedded": false
+  },
+  "observation": {
+    "request_id": "req_ui_1786161421715_c47368f139454d0e",
+    "result": "refused",
+    "object_count": 0,
+    "uncertain": true,
+    "latency_ms": 1530,
+    "timing": {
+      "preprocess_ms": 3,
+      "inference_ms": 1527,
+      "validation_ms": 0
+    },
+    "model": {
+      "base": "qwen3-vl-2b-instruct-4bit",
+      "adapter": null
+    },
+    "model_revision": "not_reported",
+    "image_bytes_embedded": false,
+    "query_text_embedded": false
+  },
+  "evaluation": {
+    "source": "evaluation-package.fixture.json",
+    "truth_state": "fixture",
+    "verified": false,
+    "eligible_for_model_acceptance": false
+  }
+}

@@ -26,6 +26,28 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "lifecycle-demo":
         _print_json(_lifecycle_demo())
         return 0
+    if args.command == "real-validate":
+        from src.observability.real_validation import (
+            run_real_runtime_acceptance,
+            write_real_runtime_reports,
+        )
+
+        real_settings = replace(settings, model_mode="real")
+        report = run_real_runtime_acceptance(
+            real_settings,
+            sample_path=args.sample,
+            host=args.host,
+            port=args.port,
+            warmup_runs=args.warmup_runs,
+            measured_runs=args.measured_runs,
+        )
+        write_real_runtime_reports(
+            report,
+            json_path=args.json_output,
+            markdown_path=args.markdown_output,
+        )
+        _print_json(report)
+        return 0 if report["status"] == "passed" else 2
 
     registry = build_service_registry(settings)
     preflight = run_preflight(settings, registry)
@@ -58,9 +80,7 @@ def main(argv: list[str] | None = None) -> int:
             quiet_settings = replace(settings, log_level="WARNING")
             app = create_app(quiet_settings, registry, emit_config_log=False)
             report["stability"] = asyncio.run(
-                sample_api_stability(
-                    app, quiet_settings, registry, request_count=args.requests
-                )
+                sample_api_stability(app, quiet_settings, registry, request_count=args.requests)
             )
         if args.output:
             write_json_report(args.output, report)
@@ -78,8 +98,10 @@ def main(argv: list[str] | None = None) -> int:
 
     import uvicorn
 
+    from src.api.app import create_app
+
     uvicorn.run(
-        "src.api.app:app",
+        create_app(settings, registry),
         host=args.host,
         port=args.port,
         log_level=args.log_level.lower(),
@@ -97,6 +119,23 @@ def _parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "lifecycle-demo",
         help="run candidate/validate/activate/rollback using mock registrations",
+    )
+    real_validate = subparsers.add_parser(
+        "real-validate",
+        help="strict real-only Uvicorn acceptance; never falls back to mock",
+    )
+    real_validate.add_argument("--sample", default="assets/system_architecture.png")
+    real_validate.add_argument("--host", default="127.0.0.1")
+    real_validate.add_argument("--port", type=int, default=18086)
+    real_validate.add_argument("--warmup-runs", type=int, default=5)
+    real_validate.add_argument("--measured-runs", type=int, default=30)
+    real_validate.add_argument(
+        "--json-output",
+        default="docs/deployment/phase5_real_runtime_report.json",
+    )
+    real_validate.add_argument(
+        "--markdown-output",
+        default="docs/deployment/phase5_real_runtime_report.md",
     )
 
     validate = subparsers.add_parser(
@@ -154,9 +193,7 @@ def _lifecycle_demo() -> dict[str, Any]:
         request_id="demo_activate",
         reason="atomic activation demonstration",
         expected_active_model_id=active_before.model_id if active_before else None,
-        expected_active_fingerprint=(
-            active_before.model_fingerprint if active_before else None
-        ),
+        expected_active_fingerprint=(active_before.model_fingerprint if active_before else None),
     )
     after_activation = registry.statuses()
     registry.rollback(

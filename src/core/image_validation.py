@@ -81,9 +81,7 @@ def decode_image_data_url(value: str, settings: ServiceSettings) -> tuple[bytes,
     try:
         payload = base64.b64decode(encoded, validate=True)
     except (binascii.Error, ValueError) as exc:
-        raise ServiceError(
-            ErrorCode.INVALID_IMAGE, "image base64 payload is invalid"
-        ) from exc
+        raise ServiceError(ErrorCode.INVALID_IMAGE, "image base64 payload is invalid") from exc
     return payload, content_type
 
 
@@ -131,10 +129,7 @@ def validate_image_bytes(
                 raise ValueError("decoder format differs from signature")
             if frames != 1:
                 raise ValueError("animated or multi-frame images are not supported")
-            if (
-                width > settings.max_image_dimension
-                or height > settings.max_image_dimension
-            ):
+            if width > settings.max_image_dimension or height > settings.max_image_dimension:
                 raise ServiceError(
                     ErrorCode.INVALID_IMAGE,
                     f"image dimensions exceed {settings.max_image_dimension}px",
@@ -160,9 +155,7 @@ def validate_image_bytes(
             ErrorCode.INVALID_IMAGE, "image content cannot be safely decoded"
         ) from exc
     except Image.DecompressionBombWarning as exc:
-        raise ServiceError(
-            ErrorCode.INVALID_IMAGE, "image exceeds safe decoder limits"
-        ) from exc
+        raise ServiceError(ErrorCode.INVALID_IMAGE, "image exceeds safe decoder limits") from exc
 
     return payload, ImageMetadata(
         width=width,

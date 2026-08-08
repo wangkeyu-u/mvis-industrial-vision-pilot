@@ -10,9 +10,7 @@ from src.core.model_registry import MockModelAdapter
 from .conftest import image_bytes
 
 
-def post_image(
-    client, *, payload: bytes | None = None, content_type: str = "image/jpeg", **data
-):
+def post_image(client, *, payload: bytes | None = None, content_type: str = "image/jpeg", **data):
     form = {"query": "找出不符合要求的区域", **data}
     return client.post(
         "/v1/analyze",
@@ -92,9 +90,7 @@ def test_json_base64_contract_used_by_http_client(client) -> None:
 def test_json_transport_rejects_invalid_image_or_query(
     client, image: str, query: str, code: str
 ) -> None:
-    assert_error(
-        client.post("/v1/analyze", json={"image": image, "query": query}), 400, code
-    )
+    assert_error(client.post("/v1/analyze", json={"image": image, "query": query}), 400, code)
 
 
 def test_json_transport_maps_malformed_json_to_stable_error(client) -> None:
@@ -107,9 +103,9 @@ def test_json_transport_maps_malformed_json_to_stable_error(client) -> None:
 
 
 def test_openapi_documents_multipart_and_json_transports(client) -> None:
-    content = client.get("/openapi.json").json()["paths"]["/v1/analyze"]["post"][
-        "requestBody"
-    ]["content"]
+    content = client.get("/openapi.json").json()["paths"]["/v1/analyze"]["post"]["requestBody"][
+        "content"
+    ]
     assert "multipart/form-data" in content
     assert "application/json" in content
 
@@ -152,12 +148,8 @@ def test_mock_does_not_misread_noncompliant_as_compliant(client) -> None:
         (b"plain text", "text/plain"),
     ],
 )
-def test_rejects_mime_spoof_and_corrupt_content(
-    client, payload: bytes, mime: str
-) -> None:
-    assert_error(
-        post_image(client, payload=payload, content_type=mime), 400, "INVALID_IMAGE"
-    )
+def test_rejects_mime_spoof_and_corrupt_content(client, payload: bytes, mime: str) -> None:
+    assert_error(post_image(client, payload=payload, content_type=mime), 400, "INVALID_IMAGE")
 
 
 def test_rejects_byte_limit_before_decode(client_factory) -> None:
@@ -199,9 +191,7 @@ def test_model_not_ready(client_factory) -> None:
 
 
 def test_inference_timeout(client_factory) -> None:
-    client = client_factory(
-        MockModelAdapter(delay_seconds=0.05), inference_timeout_seconds=0.005
-    )
+    client = client_factory(MockModelAdapter(delay_seconds=0.05), inference_timeout_seconds=0.005)
     assert_error(post_image(client), 504, "INFERENCE_TIMEOUT")
 
 

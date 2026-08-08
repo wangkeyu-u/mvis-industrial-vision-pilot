@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import hmac
 import json
 import os
@@ -62,12 +63,8 @@ class RequestContextMiddleware:
             return
 
         raw_headers = dict(scope.get("headers", []))
-        supplied = raw_headers.get(b"x-request-id", b"").decode(
-            "ascii", errors="ignore"
-        )
-        request_id = (
-            supplied if REQUEST_ID_PATTERN.fullmatch(supplied) else _new_request_id()
-        )
+        supplied = raw_headers.get(b"x-request-id", b"").decode("ascii", errors="ignore")
+        request_id = supplied if REQUEST_ID_PATTERN.fullmatch(supplied) else _new_request_id()
         scope.setdefault("state", {})["request_id"] = request_id
         token = bind_request_id(request_id)
         started = time.perf_counter()
@@ -91,9 +88,7 @@ class RequestContextMiddleware:
                 extra={
                     "status": status_code,
                     "latency": {
-                        "http_total_ms": max(
-                            0, round((time.perf_counter() - started) * 1000)
-                        )
+                        "http_total_ms": max(0, round((time.perf_counter() - started) * 1000))
                     },
                     "memory_peak_mb": peak_memory_mb(),
                 },
@@ -134,9 +129,7 @@ def create_app(
     configured_model = model_registry.active()
     runtime_status = model_registry.runtime_status()
     should_emit_config_log = (
-        os.getenv("MVIS_SUPPRESS_CONFIG_LOG") != "1"
-        if emit_config_log is None
-        else emit_config_log
+        os.getenv("MVIS_SUPPRESS_CONFIG_LOG") != "1" if emit_config_log is None else emit_config_log
     )
     if should_emit_config_log:
         logger.info(
@@ -144,13 +137,9 @@ def create_app(
             extra={
                 "model_id": configured_model.model_id if configured_model else None,
                 "adapter_id": (
-                    configured_model.adapter.identity.adapter
-                    if configured_model
-                    else None
+                    configured_model.adapter.identity.adapter if configured_model else None
                 ),
-                "quantization": (
-                    configured_model.quantization if configured_model else None
-                ),
+                "quantization": (configured_model.quantization if configured_model else None),
                 "runtime_mode": runtime_status["selected_mode"],
                 "degraded": runtime_status["degraded"],
                 "fallback_reason": runtime_status["fallback_reason"],
@@ -160,9 +149,7 @@ def create_app(
         )
 
     @application.exception_handler(ServiceError)
-    async def service_error_handler(
-        request: Request, exc: ServiceError
-    ) -> JSONResponse:
+    async def service_error_handler(request: Request, exc: ServiceError) -> JSONResponse:
         request_id = getattr(request.state, "request_id", _new_request_id())
         error_runtime = model_registry.runtime_status()
         logger.warning(
@@ -200,16 +187,10 @@ def create_app(
         if request.url.path.startswith("/v1/models/"):
             code = ErrorCode.MODELOPS_CONFLICT
         else:
-            code = (
-                ErrorCode.INVALID_IMAGE
-                if "image" in fields
-                else ErrorCode.INVALID_QUERY
-            )
+            code = ErrorCode.INVALID_IMAGE if "image" in fields else ErrorCode.INVALID_QUERY
         return await service_error_handler(
             request,
-            ServiceError(
-                code, "request form fields are invalid", details={"fields": fields}
-            ),
+            ServiceError(code, "request form fields are invalid", details={"fields": fields}),
         )
 
     @application.exception_handler(Exception)
@@ -254,9 +235,7 @@ def create_app(
         openapi_extra={
             "requestBody": {
                 "content": {
-                    "application/json": {
-                        "schema": Base64AnalyzeRequest.model_json_schema()
-                    }
+                    "application/json": {"schema": Base64AnalyzeRequest.model_json_schema()}
                 }
             }
         },
@@ -279,19 +258,12 @@ def create_app(
             async for chunk in request.stream():
                 body_size += len(chunk)
                 if body_size > max_json_bytes:
-                    raise ServiceError(
-                        ErrorCode.INVALID_IMAGE, "JSON request body is too large"
-                    )
+                    raise ServiceError(ErrorCode.INVALID_IMAGE, "JSON request body is too large")
                 chunks.append(chunk)
             try:
-                json_request = Base64AnalyzeRequest.model_validate_json(
-                    b"".join(chunks)
-                )
+                json_request = Base64AnalyzeRequest.model_validate_json(b"".join(chunks))
             except ValidationError as exc:
-                fields = [
-                    str((error.get("loc") or ("request",))[-1])
-                    for error in exc.errors()
-                ]
+                fields = [str((error.get("loc") or ("request",))[-1]) for error in exc.errors()]
                 code = (
                     ErrorCode.INVALID_IMAGE
                     if any(field.startswith("image") for field in fields)
@@ -584,4 +556,26 @@ def create_app(
     return application
 
 
-app = create_app()
+class LazyServiceApplication:
+    """Delay default app construction until the first ASGI event.
+
+    The CLI supplies an already-preflighted app directly to Uvicorn. Keeping the
+    import-level fallback lazy prevents a second real-model load merely from
+    importing ``create_app``.
+    """
+
+    def __init__(self) -> None:
+        self._application: FastAPI | None = None
+        self._lock: asyncio.Lock | None = None
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if self._application is None:
+            if self._lock is None:
+                self._lock = asyncio.Lock()
+            async with self._lock:
+                if self._application is None:
+                    self._application = create_app()
+        await self._application(scope, receive, send)
+
+
+app = LazyServiceApplication()

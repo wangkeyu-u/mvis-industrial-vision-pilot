@@ -106,6 +106,18 @@ class KpiAcceptanceTests(unittest.TestCase):
             all(item.reasons[0].code == "MOCK_NOT_MODEL_SCORE" for item in acceptance.assessments)
         )
 
+    def test_pilot_metrics_are_never_formal_kpi_acceptance_results(self) -> None:
+        acceptance = evaluate_kpi_acceptance(fixture_report().summary, pilot_only=True)
+        self.assertEqual(acceptance.status, "pilot_only")
+        self.assertFalse(acceptance.eligible_for_model_acceptance)
+        self.assertTrue(all(item.status == "pilot_only" for item in acceptance.assessments))
+        self.assertTrue(
+            all(
+                item.reasons[0].code == "PILOT_DATASET_BELOW_SAMPLE_FLOOR"
+                for item in acceptance.assessments
+            )
+        )
+
 
 class EvaluationPackageTests(unittest.TestCase):
     def test_package_contains_provenance_intervals_failures_and_checksums(self) -> None:
@@ -237,6 +249,38 @@ class EvaluationPackageTests(unittest.TestCase):
             self.assertIn("MOCK OUTPUT", html)
             self.assertEqual(metrics["kpi_acceptance"]["status"], "mock_only")
             self.assertFalse(metrics["kpi_acceptance"]["eligible_for_model_acceptance"])
+
+    def test_manifest_pilot_gate_watermarks_package_and_blocks_acceptance(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = json.loads(DATA_MANIFEST.read_text(encoding="utf-8"))
+            manifest["statistics"] = {
+                "evaluation_status": "pilot",
+                "formal_kpi_eligible": False,
+                "formal_kpi_ineligibility_reason": "test split has 56 samples; minimum is 300",
+            }
+            pilot_manifest = root / "pilot-manifest.json"
+            pilot_manifest.write_text(json.dumps(manifest), encoding="utf-8")
+            package_path = root / "pilot-package"
+            exported = export_evaluation_package(
+                fixture_report(),
+                package_path,
+                resolved_config={"source": "real_pilot"},
+                data_manifest_path=pilot_manifest,
+                created_at="2026-08-08T00:00:00Z",
+                bootstrap_resamples=100,
+                bootstrap_seed=7,
+            )
+            metrics = json.loads((package_path / "metrics.json").read_text(encoding="utf-8"))
+            provenance = json.loads(
+                (package_path / "data_provenance.json").read_text(encoding="utf-8")
+            )
+            self.assertTrue(exported.pilot_only)
+            self.assertEqual(metrics["kpi_acceptance"]["status"], "pilot_only")
+            self.assertFalse(metrics["kpi_acceptance"]["eligible_for_model_acceptance"])
+            self.assertFalse(provenance["formal_kpi_eligible"])
+            self.assertIn("PILOT DATASET", (package_path / "report.md").read_text())
+            self.assertIn("PILOT DATASET", (package_path / "report.html").read_text())
 
 
 if __name__ == "__main__":

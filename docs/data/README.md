@@ -19,6 +19,7 @@ JSON Schema 位于 `configs/data/sample.schema.json` 和 `configs/data/manifest.
 - 统一评测：`src.evaluation.evaluate_cases(cases)`。返回 `EvaluationSummary`，五项指标与 `sample_count`、`localization_count`、`hard_negative_count` 同时提供。
 - 系统输出适配：`normalize_model_result(result)` 直接接收算法 `ModelResult`；`normalize_analyze_response(payload)` 接收 `/v1/analyze` 解析后的 mapping 或原始 JSON 字符串。
 - 批量评测：`evaluate_offline_records(records)` 输出逐样本结果、五项指标、切片指标和失败案例；机器报告契约位于 `configs/eval/report.schema.json`。
+- KSDD V0：`prepare_ksdd_dataset(...)` 将官方精细标注发布转换为实体/近重复隔离的冻结 pilot；命令行入口为 `python -m src.data.ksdd_cli`。真实数据证据、许可和限制见 [phase5_dataset_report.md](phase5_dataset_report.md)。
 
 这些门面仅接收标准 Python 对象或本地文件，不依赖模型、API 或网络数据。
 
@@ -94,6 +95,8 @@ python -m src.evaluation.cli \
 置信区间使用固定 seed 的 percentile bootstrap。Macro-F1 按样本成对重采样；定位按真值目标命中与否重采样；JSON、困难负例和一致性按各自有效分母重采样。空切片的区间边界为 `null`，不解读为达标。
 
 KPI-01 与 KPI-02 同时检查绝对阈值和相对零样本基线的百分点提升；KPI-04 同时检查假阳性率上限和相对下降比例。缺失必需基线时状态为 `not_evaluable`，不会默认通过。
+
+当数据 manifest 明确记录 `formal_kpi_eligible=false` 时，评测包自动添加 `PILOT DATASET` 水印，并把 KPI-01～05 全部设为 `pilot_only`、`eligible_for_model_acceptance=false`。该门禁不能被表面达标的指标值绕过。
 
 `tests/evaluation/fixtures` 下的数据仅用于验证评测代码。对它们导出时必须传入 `--fixture-only`；此时评测包及全部 KPI 状态强制为 `fixture_only`、`eligible_for_model_acceptance=false`，不得作为模型成绩或 MVP 验收证据。
 

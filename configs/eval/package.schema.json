@@ -10,6 +10,7 @@
     "created_at": {"type": "string", "format": "date-time"},
     "fixture_only": {"type": "boolean"},
     "mock_only": {"type": "boolean"},
+    "pilot_only": {"type": "boolean"},
     "fixture_notice": {"type": ["string", "null"]},
     "component_sha256": {
       "type": "object",

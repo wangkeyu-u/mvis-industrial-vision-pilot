@@ -20,13 +20,15 @@ def _format(value: Any) -> str:
     return "N/A" if value is None else f"{float(value):.4f}" if isinstance(value, float) else str(value)
 
 
-def _watermark(fixture_only: bool, mock_only: bool) -> str | None:
+def _watermark(fixture_only: bool, mock_only: bool, pilot_only: bool) -> str | None:
     if fixture_only and mock_only:
         return "SYNTHETIC FIXTURE / MOCK OUTPUT — NOT MODEL PERFORMANCE"
     if fixture_only:
         return "SYNTHETIC FIXTURE — NOT MODEL PERFORMANCE"
     if mock_only:
         return "MOCK OUTPUT — NOT MODEL PERFORMANCE"
+    if pilot_only:
+        return "PILOT DATASET — NOT FORMAL KPI ACCEPTANCE"
     return None
 
 
@@ -38,8 +40,9 @@ def render_markdown_report(
     comparison: Mapping[str, Any] | None = None,
     fixture_only: bool = False,
     mock_only: bool = False,
+    pilot_only: bool = False,
 ) -> str:
-    watermark = _watermark(fixture_only, mock_only)
+    watermark = _watermark(fixture_only, mock_only, pilot_only)
     lines = ["# Visual Compliance Evaluation Report", ""]
     if watermark:
         lines.extend([f"> **{watermark}**", ""])
@@ -88,7 +91,7 @@ def render_markdown_report(
         lines.extend(["", "## Candidate model comparison", "", f"Comparison strength: **{comparison['conclusion_strength']}**", "", comparison["notice"], "", "| Metric | Baseline | Candidate | Delta | Hint |", "|---|---:|---:|---:|---|"])
         for metric, value in comparison["metrics"].items():
             lines.append(f"| {metric} | {value['baseline']:.4f} | {value['candidate']:.4f} | {value['delta']:+.4f} | {value['significance_hint']} |")
-    lines.extend(["", "## Interpretation limits", "", "- Confidence intervals quantify sampling uncertainty, not dataset bias or annotation error.", "- Slice comparisons are descriptive and are not corrected for multiple comparisons.", "- Fixture or mock watermarked reports must never be presented as model performance.", ""])
+    lines.extend(["", "## Interpretation limits", "", "- Confidence intervals quantify sampling uncertainty, not dataset bias or annotation error.", "- Slice comparisons are descriptive and are not corrected for multiple comparisons.", "- Fixture or mock watermarked reports must never be presented as model performance.", "- Pilot-watermarked reports are exploratory and must never be presented as formal KPI acceptance.", ""])
     return "\n".join(lines)
 
 
@@ -100,8 +103,9 @@ def render_html_report(
     comparison: Mapping[str, Any] | None = None,
     fixture_only: bool = False,
     mock_only: bool = False,
+    pilot_only: bool = False,
 ) -> str:
-    watermark = _watermark(fixture_only, mock_only)
+    watermark = _watermark(fixture_only, mock_only, pilot_only)
     intervals = metrics_payload["confidence_intervals"]
 
     def rows(values: list[list[Any]]) -> str:
@@ -138,4 +142,4 @@ def render_html_report(
 <h2>KPI acceptance</h2><table><thead><tr><th>KPI</th><th>Metric</th><th>Status</th><th>Reasons</th></tr></thead><tbody>{rows(kpi_rows)}</tbody></table>
 <h2>Slice differences</h2><table><thead><tr><th>Slice</th><th>Samples</th><th>Metric</th><th>Value</th><th>Delta</th></tr></thead><tbody>{rows(slice_rows)}</tbody></table>
 <h2>Failure cases</h2><table><thead><tr><th>Sample</th><th>Failure codes</th><th>Source</th></tr></thead><tbody>{rows(failure_rows)}</tbody></table>
-{comparison_section}<h2>Interpretation limits</h2><ul><li>Intervals do not capture dataset bias or annotation error.</li><li>Slice comparisons are descriptive and not multiplicity-corrected.</li><li>Fixture/mock reports are not model performance.</li></ul></body></html>"""
+{comparison_section}<h2>Interpretation limits</h2><ul><li>Intervals do not capture dataset bias or annotation error.</li><li>Slice comparisons are descriptive and not multiplicity-corrected.</li><li>Fixture/mock reports are not model performance.</li><li>Pilot reports are not formal KPI acceptance.</li></ul></body></html>"""

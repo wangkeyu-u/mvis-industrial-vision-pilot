@@ -248,12 +248,12 @@ export function classifyReadiness(payload) {
       models,
     };
   }
-  if (runtime.degraded === true || modelLooksLikeTestDouble) {
+  if (selectedMode !== "real" || runtime.degraded !== false || modelLooksLikeTestDouble) {
     return {
       ready: true,
       state: "degraded",
-      label: "FastAPI 就绪 · 模型替身",
-      detail: runtime.fallback_reason || `${selectedMode} 降级链路`,
+      label: modelLooksLikeTestDouble ? "FastAPI 就绪 · 模型替身" : "FastAPI 就绪 · 非验收模式",
+      detail: runtime.fallback_reason || `${selectedMode} 不满足真实验收条件`,
       requestId: payload?.request_id || null,
       runtime,
       activeModel,
@@ -282,7 +282,7 @@ async function buildTransport(request, query, transport) {
     body.append("task", request.task || "inspect");
     body.append("model", request.model || "active");
     body.append("use_specialist", String(Boolean(request.useSpecialist)));
-    body.append("options", JSON.stringify({ temperature: 0, seed: 42 }));
+    body.append("options", JSON.stringify({ temperature: 0, seed: 42, max_tokens: 256 }));
     return { body, headers: {} };
   }
   return {
@@ -294,7 +294,7 @@ async function buildTransport(request, query, transport) {
       task: request.task || "inspect",
       model: request.model || "active",
       use_specialist: Boolean(request.useSpecialist),
-      options: { temperature: 0, seed: 42 },
+      options: { temperature: 0, seed: 42, max_tokens: 256 },
     }),
     headers: { "Content-Type": "application/json" },
   };
