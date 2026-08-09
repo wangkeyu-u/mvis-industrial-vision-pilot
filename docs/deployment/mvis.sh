@@ -20,8 +20,9 @@ case "$COMMAND" in
     exec uv run pytest -q tests/api
     ;;
   test-all)
-    uv run ruff check src tests
-    exec uv run pytest -q
+    uv run ruff check src tests app
+    uv run pytest -q
+    exec node --test tests/ui/*.test.mjs
     ;;
   preflight)
     MODEL_MODE=${1:-auto}
