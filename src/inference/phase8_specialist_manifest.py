@@ -19,7 +19,7 @@ from src.inference.patchcore_specialist import _sha256
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RUN = ROOT / "artifacts/model/phase8/unet_resnet18"
 DEFAULT_SELECTION = ROOT / "artifacts/model/phase8/unet_postprocess_experiments/selection.json"
-DEFAULT_OUTPUT = ROOT / "artifacts/model/phase8/specialist_manifest_unet.json"
+DEFAULT_OUTPUT = ROOT / "artifacts/model/phase8_1/specialist_manifest_unet.json"
 
 
 def build_phase8_manifest(
@@ -41,12 +41,15 @@ def build_phase8_manifest(
     config = run_manifest["configuration"]
     manifest = {
         "schema_version": "1.0",
-        "phase": "phase8",
-        "kind": "phase8_specialist_manifest",
+        "phase": "phase8.1",
+        "kind": "phase8_1_specialist_manifest",
         "algorithm": "unet",
         "status": "completed",
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "test_labels_used_for_selection": False,
+        "test_labels_used_for_training": False,
+        "test_labels_used_for_postprocess_selection": False,
+        "test_labels_used_for_route_comparison": True,
+        "external_holdout": False,
         "checkpoint": str(checkpoint),
         "checkpoint_sha256": checkpoint_sha,
         "dataset_manifest_sha256": run_manifest["dataset"]["manifest_sha256"],
@@ -75,6 +78,7 @@ def build_phase8_manifest(
         },
     }
     output = Path(output_path).resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
     return manifest
 

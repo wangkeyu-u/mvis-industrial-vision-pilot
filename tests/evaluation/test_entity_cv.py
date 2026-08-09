@@ -10,7 +10,14 @@ from src.evaluation.entity_cv import (
     bootstrap_interval,
     bootstrap_metric_interval,
     build_fold_assignment,
+    cluster_bootstrap_metric_interval,
     inner_fold_assignment,
+)
+from src.evaluation.phase8_1_protocol import (
+    FROZEN_FUSION_MODES,
+    assert_entity_isolation,
+    candidate_grid_fingerprint,
+    frozen_postprocess_candidates,
 )
 
 
@@ -96,6 +103,67 @@ def test_bootstrap_metric_interval() -> None:
     )
     assert interval["mean"] == 0.75
     assert interval["ci_low"] <= 0.75 <= interval["ci_high"]
+
+
+def test_cluster_bootstrap_preserves_entity_rows() -> None:
+    records = [
+        {"entity_id": "a", "hit": 1},
+        {"entity_id": "a", "hit": 1},
+        {"entity_id": "b", "hit": 0},
+        {"entity_id": "b", "hit": 0},
+    ]
+    interval = cluster_bootstrap_metric_interval(
+        records,
+        lambda rows: sum(row["hit"] for row in rows) / len(rows),
+        resamples=500,
+        seed=11,
+    )
+    assert interval["mean"] == 0.5
+    assert interval["clusters"] == 2.0
+    assert interval["ci_low"] == 0.0
+    assert interval["ci_high"] == 1.0
+    with pytest.raises(ValueError, match="missing cluster key"):
+        cluster_bootstrap_metric_interval([{"hit": 1}], lambda rows: 1.0)
+
+
+def test_phase8_1_candidate_grid_is_static_and_fingerprinted() -> None:
+    unet = frozen_postprocess_candidates("unet")
+    patchcore = frozen_postprocess_candidates("patchcore")
+    assert len(unet) == 18
+    assert len(patchcore) == 18
+    assert FROZEN_FUSION_MODES == ("max", "mean", "weighted")
+    assert candidate_grid_fingerprint("unet", unet) == candidate_grid_fingerprint(
+        "unet", frozen_postprocess_candidates("unet")
+    )
+    with pytest.raises(ValueError, match="unsupported model family"):
+        frozen_postprocess_candidates("unknown")
+
+
+def test_outer_test_entity_cannot_enter_any_selection_stage() -> None:
+    assert_entity_isolation(
+        outer_test_entities={"outer"},
+        fit_entities={"train"},
+        selection_entities={"validation"},
+    )
+    with pytest.raises(ValueError, match="model training"):
+        assert_entity_isolation(
+            outer_test_entities={"outer"},
+            fit_entities={"train", "outer"},
+            selection_entities={"train"},
+        )
+    with pytest.raises(ValueError, match="threshold/fusion/postprocess"):
+        assert_entity_isolation(
+            outer_test_entities={"outer"},
+            fit_entities={"train"},
+            selection_entities={"outer"},
+        )
+    with pytest.raises(ValueError, match="early stopping"):
+        assert_entity_isolation(
+            outer_test_entities={"outer"},
+            fit_entities={"train"},
+            selection_entities={"validation"},
+            early_stop_entities={"outer"},
+        )
 
 
 def test_protocol_label_is_internal_only() -> None:

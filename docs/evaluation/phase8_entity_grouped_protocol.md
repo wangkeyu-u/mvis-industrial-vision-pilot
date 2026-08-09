@@ -1,5 +1,7 @@
 # 第八阶段冻结评测协议：实体分组交叉验证（internal pilot validation）
 
+> 历史协议：本文记录 v1。第 8.1 阶段审计发现全局 validation 候选预筛的间接污染；当前协议见 [phase8_1_entity_grouped_protocol.md](phase8_1_entity_grouped_protocol.md)。
+
 协议 ID：`ksdd_entity_grouped_cv_v1`
 冻结日期：2026-08-09
 实现：`src/evaluation/entity_cv.py`（协议原语）、`src/evaluation/phase8_cv_runner.py`（PatchCore 嵌套 CV）、`src/evaluation/phase8_cv_unet.py`（U-Net CV）

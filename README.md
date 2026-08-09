@@ -44,17 +44,17 @@ docs/deployment/mvis.sh release-validate fused \
 
 ## 第八阶段：定位修复（U-Net specialist）
 
-第八阶段解决了"分类有效、定位 Acc@IoU = 0"的核心问题：监督 U-Net（ResNet-18 编码器，BCE+Dice，256 tile）将定位从 0/9 提升到 6/9（test），实体分组交叉验证汇集 Acc@IoU 0.745 [0.611, 0.870]。使用第八阶段 specialist：
+第八阶段解决了"分类有效、定位 Acc@IoU = 0"的核心问题：监督 U-Net（ResNet-18 编码器，BCE+Dice，256 tile）将历史 test 定位从 0/9 提升到 6/9。第 8.1 阶段修复了 CV 候选筛选污染，严格 v2 实体分组交叉验证的 Acc@IoU 为 0.745，entity-cluster bootstrap 95% CI [0.623, 0.863]。使用修订后 specialist manifest：
 
 ```bash
 export MVIS_MODEL_MODE=real
 export MVIS_ANALYSIS_MODE=fused
-export MVIS_SPECIALIST_MANIFEST=artifacts/model/phase8/specialist_manifest_unet.json
+export MVIS_SPECIALIST_MANIFEST=artifacts/model/phase8_1/specialist_manifest_unet.json
 export MVIS_SPECIALIST_QUALITY_STATUS=pilot_candidate
 ```
 
-`create_specialist_service_adapter` 按 manifest `algorithm` 分派 U-Net 或 PatchCore；第七阶段 manifest 始终可加载，即回滚路径。所有第八阶段评测数字为 `internal_pilot_validation`（test 已参与选择，实体分组 CV 为替代协议），`production_ready` 保持 `false`。
+`create_specialist_service_adapter` 按 manifest `algorithm` 分派 U-Net 或 PatchCore；第七/八阶段 manifest 均保持可加载，即回滚路径。修订 manifest 明确记录：历史 test 没有用于训练或后处理选参，但参与过路线比较。所有数字仍为 `internal_pilot_validation`，`external_holdout=false`、`production_ready=false`。
 
-证据：[第八阶段算法报告](docs/model/phase8_algorithm_report.md)、[定位失败案例报告](docs/qa/phase8_localization_failure_report.md)、[实体分组评测协议](docs/evaluation/phase8_entity_grouped_protocol.md)、[第八阶段面试讲稿](docs/qa/phase8_interview_script.md)。
+证据：[第 8.1 阶段方法学修订报告](docs/model/phase8_1_methodology_report.md)、[v2 实体分组评测协议](docs/evaluation/phase8_1_entity_grouped_protocol.md)、[第八阶段算法报告](docs/model/phase8_algorithm_report.md)、[定位失败案例报告](docs/qa/phase8_localization_failure_report.md)、[面试讲稿](docs/qa/phase8_interview_script.md)。
 
 详细的配置、错误码、CORS、ModelOps 与资源边界见 [部署手册](docs/deployment/README.md)；最终证据见 [Phase 7 发布报告](docs/deployment/phase7_release_report.md)。

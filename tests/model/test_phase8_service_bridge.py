@@ -17,7 +17,7 @@ from src.inference.service_bridge import (
 
 ROOT = Path(__file__).resolve().parents[2]
 PHASE7_MANIFEST = ROOT / "artifacts/model/phase7/patchcore_resnet18/run_manifest.json"
-PHASE8_MANIFEST = ROOT / "artifacts/model/phase8/specialist_manifest_unet.json"
+PHASE8_MANIFEST = ROOT / "artifacts/model/phase8_1/specialist_manifest_unet.json"
 DATASET = ROOT / "data/processed/ksdd_v0"
 
 
@@ -55,6 +55,24 @@ def _minimal_unet_manifest(**overrides: object) -> dict:
             "bytes": 46807446,
         },
     }
+    manifest.update(overrides)
+    return manifest
+
+
+def _minimal_revised_unet_manifest(**overrides: object) -> dict:
+    manifest = _minimal_unet_manifest()
+    manifest.pop("test_labels_used_for_selection")
+    manifest.update(
+        {
+            "phase": "phase8.1",
+            "kind": "phase8_1_specialist_manifest",
+            "test_labels_used_for_training": False,
+            "test_labels_used_for_postprocess_selection": False,
+            "test_labels_used_for_route_comparison": True,
+            "external_holdout": False,
+            "production_ready": False,
+        }
+    )
     manifest.update(overrides)
     return manifest
 
@@ -101,6 +119,19 @@ class UnetManifestValidationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             create_specialist_service_adapter(path)
         path.unlink()
+
+    def test_revised_manifest_rejects_ambiguous_or_unsafe_provenance(self) -> None:
+        for override in (
+            {"test_labels_used_for_training": True},
+            {"test_labels_used_for_postprocess_selection": True},
+            {"test_labels_used_for_route_comparison": None},
+            {"external_holdout": True},
+            {"production_ready": True},
+        ):
+            path = self._write_manifest(_minimal_revised_unet_manifest(**override))
+            with self.assertRaises(ValueError):
+                create_specialist_service_adapter(path)
+            path.unlink()
 
     def test_patchcore_manifest_still_dispatches_to_patchcore_loader(self) -> None:
         payload = {

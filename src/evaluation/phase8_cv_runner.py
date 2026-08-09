@@ -25,10 +25,14 @@ from src.evaluation.entity_cv import (
     PROTOCOL_LABEL,
     bootstrap_metric_interval,
     build_fold_assignment,
+    cluster_bootstrap_metric_interval,
     inner_fold_assignment,
 )
-from src.evaluation.localization_postprocess import (
-    PostprocessConfig,
+from src.evaluation.phase8_1_protocol import (
+    FROZEN_FUSION_MODES,
+    assert_entity_isolation,
+    candidate_grid_fingerprint,
+    frozen_postprocess_candidates,
 )
 from src.evaluation.phase8_experiments import evaluate_config
 from src.inference.patchcore_specialist import select_classification_threshold
@@ -46,47 +50,8 @@ from src.inference.patchcore_tiled import (
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = ROOT / "configs/models/ksdd_patchcore_resnet18_tiled_phase8.json"
 DEFAULT_DATASET = ROOT / "data/processed/ksdd_v0"
-DEFAULT_TILED_EXPERIMENTS = ROOT / "artifacts/model/phase8/tiled_postprocess_experiments"
-DEFAULT_OUTPUT = ROOT / "artifacts/model/phase8/entity_cv_patchcore"
+DEFAULT_OUTPUT = ROOT / "artifacts/model/phase8_1/entity_cv_patchcore"
 CV_CORESET_RATIO = 0.001
-CV_CANDIDATE_COUNT = 8
-
-
-def load_cv_candidates(experiments_dir: Path, fusion_mode: str) -> list[PostprocessConfig]:
-    """Top validation configs of the selected fusion mode plus the winner."""
-
-    selection = json.loads((experiments_dir / "selection.json").read_text(encoding="utf-8"))
-    winner = PostprocessConfig(**selection["selected_config"])
-    grid_path = experiments_dir / f"validation_grid_{fusion_mode}.jsonl"
-    records = []
-    with grid_path.open("r", encoding="utf-8") as stream:
-        for line in stream:
-            if line.strip():
-                records.append(json.loads(line))
-
-    def ranking(record: dict[str, Any]) -> tuple[float, float, float, float]:
-        metrics = record["metrics"]
-        return (
-            metrics["acc_at_iou_0_5"],
-            metrics["box_f1"],
-            metrics["pixel_dice"],
-            -metrics["localization_negative_rate"],
-        )
-
-    records.sort(key=ranking, reverse=True)
-    configs = []
-    seen = set()
-    for record in records:
-        config = PostprocessConfig(**record["config"])
-        if config.fingerprint() in seen:
-            continue
-        configs.append(config)
-        seen.add(config.fingerprint())
-        if len(configs) >= CV_CANDIDATE_COUNT:
-            break
-    if winner.fingerprint() not in seen:
-        configs.append(winner)
-    return configs
 
 
 def _fit_memory_bank(
@@ -160,6 +125,66 @@ def _infer_split_heatmaps(
     return scores_path
 
 
+def _infer_split_heatmaps_by_fusion(
+    model: Any,
+    torch: Any,
+    device: Any,
+    samples: Sequence[dict[str, Any]],
+    config: TiledPatchcoreConfig,
+    fusion_modes: Sequence[str],
+    cache_dir: Path,
+    tag: str,
+) -> dict[str, Path]:
+    """Infer tiles once and materialize every protocol-defined fusion mode."""
+
+    model.to(device)
+    model.eval()
+    outputs = _infer_tiles(model, torch, device, samples, config)
+    paths = {mode: cache_dir / f"{tag}_{mode}_scores.jsonl" for mode in fusion_modes}
+    streams = {mode: path.open("w", encoding="utf-8") for mode, path in paths.items()}
+    try:
+        for item in outputs:
+            sample = item["sample"]
+            for mode in fusion_modes:
+                fused = _fuse_tile_heatmaps(
+                    item["tile_maps"],
+                    item["offsets"],
+                    (item["width"], item["height"]),
+                    config.tile_size,
+                    mode,
+                )
+                heatmap_path = cache_dir / f"{tag}_{mode}_{sample['sample_id']}.npy"
+                np.save(heatmap_path, fused.astype(np.float32))
+                streams[mode].write(
+                    json.dumps(
+                        {
+                            "sample_id": sample["sample_id"],
+                            "anomaly_score": item["score"],
+                            "heatmap_npy": str(heatmap_path),
+                        },
+                        sort_keys=True,
+                    )
+                    + "\n"
+                )
+    finally:
+        for stream in streams.values():
+            stream.close()
+    return paths
+
+
+def _cleanup_score_artifacts(score_paths: Sequence[Path]) -> None:
+    """Remove fold-local heatmaps after metrics have been materialized."""
+
+    for scores_path in score_paths:
+        if scores_path.is_file():
+            with scores_path.open("r", encoding="utf-8") as stream:
+                for line in stream:
+                    if line.strip():
+                        heatmap = Path(json.loads(line)["heatmap_npy"])
+                        heatmap.unlink(missing_ok=True)
+            scores_path.unlink(missing_ok=True)
+
+
 def _build_module(torch: Any, config: TiledPatchcoreConfig, coreset_ratio: float) -> tuple[Any, Any]:
     from anomalib.models import Patchcore
 
@@ -180,7 +205,6 @@ def _build_module(torch: Any, config: TiledPatchcoreConfig, coreset_ratio: float
 def run_nested_cv(
     config_path: str | Path = DEFAULT_CONFIG,
     dataset_root: str | Path = DEFAULT_DATASET,
-    experiments_dir: str | Path = DEFAULT_TILED_EXPERIMENTS,
     output_dir: str | Path = DEFAULT_OUTPUT,
     outer_folds: int = 5,
     inner_folds: int = 4,
@@ -194,7 +218,6 @@ def run_nested_cv(
 
     config = load_tiled_config(config_path)
     dataset = Path(dataset_root).resolve()
-    experiments = Path(experiments_dir).resolve()
     output = Path(output_dir).resolve()
     if output.exists():
         raise FileExistsError(f"refusing to overwrite CV output: {output}")
@@ -202,9 +225,9 @@ def run_nested_cv(
     cache_root = output / "fold_cache"
     cache_root.mkdir()
 
-    selection = json.loads((experiments / "selection.json").read_text(encoding="utf-8"))
-    fusion_mode = selection["selected_fusion_mode"]
-    candidates = load_cv_candidates(experiments, fusion_mode)
+    fusion_modes = FROZEN_FUSION_MODES
+    candidates = frozen_postprocess_candidates("patchcore")
+    grid_fingerprint = candidate_grid_fingerprint("patchcore", candidates, fusion_modes)
 
     samples = _load_samples(dataset)
     for sample in samples:
@@ -246,9 +269,16 @@ def run_nested_cv(
             entity_positive_counts=entity_positive,
         )
 
+        assert_entity_isolation(
+            outer_test_entities=outer_test_entities,
+            fit_entities=outer_train_entities,
+            selection_entities=outer_train_entities,
+        )
+
         inner_scores_all: list[float] = []
         inner_labels_all: list[bool] = []
-        inner_pools: list[dict[str, Any]] = []
+        inner_pools = {mode: [] for mode in fusion_modes}
+        inner_score_paths: list[Path] = []
         for inner_fold in range(inner_folds):
             inner_val_entities = {
                 entity for entity, f in inner_assignment.items() if f == inner_fold
@@ -260,41 +290,60 @@ def run_nested_cv(
             inner_val = [s for s in outer_train if s["entity_id"] in inner_val_entities]
             module, model = _build_module(torch, config, CV_CORESET_RATIO)
             _fit_memory_bank(module, model, torch, device, inner_train_normal, config)
-            scores_path = _infer_split_heatmaps(
-                model, torch, device, inner_val, config, fusion_mode,
+            scores_paths = _infer_split_heatmaps_by_fusion(
+                model, torch, device, inner_val, config, fusion_modes,
                 cache_root, f"outer{fold}_inner{inner_fold}",
             )
-            records = _records_from_scores(scores_path, inner_val)
-            inner_pools.extend(records)
-            inner_scores_all.extend(record["score"] for record in records)
-            inner_labels_all.extend(record["label"] for record in records)
+            for mode, scores_path in scores_paths.items():
+                inner_pools[mode].extend(_records_from_scores(scores_path, inner_val))
+                inner_score_paths.append(scores_path)
+            reference_records = inner_pools[fusion_modes[0]][-len(inner_val):]
+            inner_scores_all.extend(record["score"] for record in reference_records)
+            inner_labels_all.extend(record["label"] for record in reference_records)
             del module, model
             if device.type == "mps":
                 torch.mps.empty_cache()
 
         image_threshold, _ = select_classification_threshold(inner_scores_all, inner_labels_all)
         best_config = None
+        best_fusion_mode = None
         best_ranking = None
-        for candidate in candidates:
-            outcome = evaluate_config(inner_pools, candidate, image_threshold)
-            metrics = outcome["metrics"]
-            ranking = (
-                metrics["acc_at_iou_0_5"],
-                metrics["box_f1"],
-                metrics["pixel_dice"],
-                -metrics["localization_negative_rate"],
-            )
-            if best_ranking is None or ranking > best_ranking:
-                best_ranking = ranking
-                best_config = candidate
+        inner_selection_metrics = []
+        for fusion_mode in fusion_modes:
+            for candidate in candidates:
+                outcome = evaluate_config(inner_pools[fusion_mode], candidate, image_threshold)
+                metrics = outcome["metrics"]
+                inner_selection_metrics.append(
+                    {
+                        "fusion_mode": fusion_mode,
+                        "config_fingerprint": candidate.fingerprint(),
+                        "metrics": metrics,
+                    }
+                )
+                ranking = (
+                    metrics["acc_at_iou_0_5"],
+                    metrics["box_f1"],
+                    metrics["pixel_dice"],
+                    -metrics["localization_negative_rate"],
+                )
+                if best_ranking is None or ranking > best_ranking:
+                    best_ranking = ranking
+                    best_config = candidate
+                    best_fusion_mode = fusion_mode
+
+        if best_config is None or best_fusion_mode is None:
+            raise RuntimeError("inner selection produced no PatchCore candidate")
+        _cleanup_score_artifacts(inner_score_paths)
+        del inner_pools, reference_records
 
         module, model = _build_module(torch, config, CV_CORESET_RATIO)
         _fit_memory_bank(module, model, torch, device, outer_train_normal, config)
         scores_path = _infer_split_heatmaps(
-            model, torch, device, outer_test, config, fusion_mode,
+            model, torch, device, outer_test, config, best_fusion_mode,
             cache_root, f"outer{fold}_test",
         )
         test_records = _records_from_scores(scores_path, outer_test)
+        _cleanup_score_artifacts([scores_path])
         outcome = evaluate_config(test_records, best_config, image_threshold)
         del module, model
         if device.type == "mps":
@@ -302,6 +351,11 @@ def run_nested_cv(
 
         for sample_result in outcome["per_sample"]:
             sample_result["outer_fold"] = fold
+            sample_result["entity_id"] = next(
+                sample["entity_id"]
+                for sample in outer_test
+                if sample["sample_id"] == sample_result["sample_id"]
+            )
         pooled_records.extend(outcome["per_sample"])
         fold_reports.append(
             {
@@ -309,9 +363,17 @@ def run_nested_cv(
                 "test_entities": sorted(outer_test_entities),
                 "test_images": len(outer_test),
                 "image_threshold": image_threshold,
+                "selected_fusion_mode": best_fusion_mode,
                 "selected_config": asdict(best_config),
                 "selected_config_fingerprint": best_config.fingerprint(),
                 "metrics": outcome["metrics"],
+                "selection_audit": {
+                    "outer_test_entities": sorted(outer_test_entities),
+                    "fit_entities": sorted(outer_train_entities),
+                    "selection_entities": sorted(outer_train_entities),
+                    "candidate_source": "static_protocol_grid",
+                },
+                "inner_selection_metrics": inner_selection_metrics,
                 "seconds": round(time.perf_counter() - fold_started, 3),
             }
         )
@@ -319,18 +381,20 @@ def run_nested_cv(
     pooled_metrics = _pooled_metrics(pooled_records)
     report = {
         "schema_version": "1.0",
-        "phase": "phase8",
+        "phase": "phase8.1",
         "kind": "entity_grouped_nested_cv",
         "protocol_label": PROTOCOL_LABEL,
         "protocol_id": assignment.protocol_id,
         "protocol_fingerprint": assignment.fingerprint(),
         "model": "patchcore_tiled_resnet18",
-        "fusion_mode": fusion_mode,
+        "fusion_modes_considered": list(fusion_modes),
+        "candidate_grid_fingerprint": grid_fingerprint,
         "cv_coreset_ratio": CV_CORESET_RATIO,
         "outer_folds": outer_folds,
         "inner_folds": inner_folds,
         "seed": seed,
         "candidate_configs": [asdict(config) for config in candidates],
+        "selection_scope": "inner_entities_only",
         "started_at": started_at,
         "ended_at": datetime.now(timezone.utc).isoformat(),
         "wall_seconds": round(time.perf_counter() - started, 3),
@@ -344,6 +408,9 @@ def run_nested_cv(
         },
         "external_holdout": False,
         "production_acceptance": False,
+        "test_labels_used_for_training": False,
+        "test_labels_used_for_postprocess_selection": False,
+        "test_labels_used_for_route_comparison": True,
     }
     (output / "per_sample_predictions.jsonl").write_text(
         "".join(json.dumps(record, sort_keys=True) + "\n" for record in pooled_records),
@@ -443,14 +510,23 @@ def _pooled_metrics(per_sample: Sequence[dict[str, Any]]) -> dict[str, Any]:
         ("pixel_dice", pixel_dice),
         ("box_f1", box_f1),
     ):
-        interval = bootstrap_metric_interval(per_sample, fn, resamples=2000)
+        interval = cluster_bootstrap_metric_interval(per_sample, fn, resamples=2000)
+        naive = bootstrap_metric_interval(per_sample, fn, resamples=2000)
         results[name] = {
             "estimate": interval["mean"],
             "ci_low": interval["ci_low"],
             "ci_high": interval["ci_high"],
             "confidence": interval["confidence"],
+            "bootstrap_unit": "entity",
+            "clusters": int(interval["clusters"]),
+            "naive_image_bootstrap": {
+                "ci_low": naive["ci_low"],
+                "ci_high": naive["ci_high"],
+                "confidence": naive["confidence"],
+            },
         }
     results["n_images"] = len(per_sample)
+    results["n_entities"] = len({record["entity_id"] for record in per_sample})
     return results
 
 
@@ -470,10 +546,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--dataset-root", type=Path, default=DEFAULT_DATASET)
-    parser.add_argument("--experiments-dir", type=Path, default=DEFAULT_TILED_EXPERIMENTS)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args(argv)
-    report = run_nested_cv(args.config, args.dataset_root, args.experiments_dir, args.output_dir)
+    report = run_nested_cv(args.config, args.dataset_root, args.output_dir)
     print(json.dumps({
         "protocol_label": report["protocol_label"],
         "folds": report["outer_folds"],

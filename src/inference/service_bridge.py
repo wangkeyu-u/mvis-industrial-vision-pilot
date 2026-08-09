@@ -545,10 +545,29 @@ def _create_unet_specialist_adapter(
 
     if manifest.get("status") != "completed" or manifest.get("schema_version") != "1.0":
         raise ValueError("phase 8 specialist manifest is not a completed v1 run")
-    if manifest.get("phase") != "phase8" or manifest.get("kind") != "phase8_specialist_manifest":
+    legacy_manifest = (
+        manifest.get("phase") == "phase8"
+        and manifest.get("kind") == "phase8_specialist_manifest"
+    )
+    revised_manifest = (
+        manifest.get("phase") == "phase8.1"
+        and manifest.get("kind") == "phase8_1_specialist_manifest"
+    )
+    if not legacy_manifest and not revised_manifest:
         raise ValueError("phase 8 specialist manifest kind is invalid")
-    if manifest.get("test_labels_used_for_selection") is not False:
+    if legacy_manifest and manifest.get("test_labels_used_for_selection") is not False:
         raise ValueError("phase 8 specialist selection must not use test labels")
+    if revised_manifest:
+        if manifest.get("test_labels_used_for_training") is not False:
+            raise ValueError("phase 8.1 specialist training must not use test labels")
+        if manifest.get("test_labels_used_for_postprocess_selection") is not False:
+            raise ValueError("phase 8.1 postprocess selection must not use test labels")
+        if not isinstance(manifest.get("test_labels_used_for_route_comparison"), bool):
+            raise ValueError("phase 8.1 route-comparison provenance is missing")
+        if manifest.get("external_holdout") is not False:
+            raise ValueError("phase 8.1 KSDD evidence cannot claim an external holdout")
+        if manifest.get("production_ready") is not False:
+            raise ValueError("phase 8.1 specialist is restricted to pilot serving")
     checkpoint_value = manifest.get("checkpoint")
     checkpoint_hash = manifest.get("checkpoint_sha256")
     if not isinstance(checkpoint_value, str) or not isinstance(checkpoint_hash, str):

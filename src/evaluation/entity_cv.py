@@ -20,7 +20,8 @@ import random
 from dataclasses import dataclass
 from typing import Any, Callable, Sequence
 
-PROTOCOL_ID = "ksdd_entity_grouped_cv_v1"
+PROTOCOL_ID_V1 = "ksdd_entity_grouped_cv_v1"
+PROTOCOL_ID = "ksdd_entity_grouped_nested_cv_v2"
 PROTOCOL_LABEL = "internal_pilot_validation"
 
 
@@ -196,4 +197,54 @@ def bootstrap_metric_interval(
         "confidence": confidence,
         "resamples": float(resamples),
         "n": float(n),
+    }
+
+
+def cluster_bootstrap_metric_interval(
+    per_sample: Sequence[dict[str, Any]],
+    metric_fn: Callable[[Sequence[dict[str, Any]]], float],
+    *,
+    cluster_key: str = "entity_id",
+    resamples: int = 2000,
+    seed: int = 20260810,
+    confidence: float = 0.95,
+) -> dict[str, float]:
+    """Bootstrap a metric while preserving within-entity dependence.
+
+    Each resample draws physical entities with replacement and carries every
+    image belonging to the selected entity.  Image-level bootstrap is not a
+    valid primary interval for KSDD because the eight views of one commutator
+    are correlated.
+    """
+
+    if not per_sample:
+        raise ValueError("cluster bootstrap requires at least one sample")
+    if resamples <= 0:
+        raise ValueError("resamples must be positive")
+    clusters: dict[str, list[dict[str, Any]]] = {}
+    for record in per_sample:
+        value = record.get(cluster_key)
+        if not isinstance(value, str) or not value:
+            raise ValueError(f"missing cluster key: {cluster_key}")
+        clusters.setdefault(value, []).append(record)
+    cluster_ids = sorted(clusters)
+    rng = random.Random(seed)
+    estimates = []
+    for _ in range(resamples):
+        sampled: list[dict[str, Any]] = []
+        for _ in cluster_ids:
+            sampled.extend(clusters[cluster_ids[rng.randrange(len(cluster_ids))]])
+        estimates.append(metric_fn(sampled))
+    estimates.sort()
+    alpha = (1.0 - confidence) / 2.0
+    low_index = max(0, min(resamples - 1, math.floor(alpha * resamples)))
+    high_index = max(0, min(resamples - 1, math.ceil((1.0 - alpha) * resamples) - 1))
+    return {
+        "mean": metric_fn(per_sample),
+        "ci_low": estimates[low_index],
+        "ci_high": estimates[high_index],
+        "confidence": confidence,
+        "resamples": float(resamples),
+        "n": float(len(per_sample)),
+        "clusters": float(len(cluster_ids)),
     }

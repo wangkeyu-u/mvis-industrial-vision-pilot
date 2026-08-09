@@ -27,10 +27,16 @@ from src.evaluation.entity_cv import (
     build_fold_assignment,
     inner_fold_assignment,
 )
+from src.evaluation.phase8_1_protocol import (
+    FROZEN_FUSION_MODES,
+    assert_entity_isolation,
+    candidate_grid_fingerprint,
+    frozen_postprocess_candidates,
+)
 from src.evaluation.phase8_cv_runner import (
+    _cleanup_score_artifacts,
     _pooled_metrics,
     _records_from_scores,
-    load_cv_candidates,
 )
 from src.evaluation.phase8_experiments import evaluate_config
 from src.inference.patchcore_specialist import select_classification_threshold
@@ -51,8 +57,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = ROOT / "configs/models/ksdd_unet_resnet18_phase8.json"
 DEFAULT_DATASET = ROOT / "data/processed/ksdd_v0"
 DEFAULT_TILES = ROOT / "data/processed/ksdd_tiled_v1"
-DEFAULT_UNET_EXPERIMENTS = ROOT / "artifacts/model/phase8/unet_postprocess_experiments"
-DEFAULT_OUTPUT = ROOT / "artifacts/model/phase8/entity_cv_unet"
+DEFAULT_OUTPUT = ROOT / "artifacts/model/phase8_1/entity_cv_unet"
 CV_MAX_EPOCHS = 40
 
 
@@ -157,11 +162,49 @@ def _infer_fold_heatmaps(
     return scores_path
 
 
+def _infer_fold_heatmaps_by_fusion(
+    model: Any,
+    torch: Any,
+    device: Any,
+    samples: Sequence[dict[str, Any]],
+    config: Any,
+    fusion_modes: Sequence[str],
+    cache_dir: Path,
+    tag: str,
+) -> dict[str, Path]:
+    """Run U-Net once and persist all statically allowed fusion modes."""
+
+    outputs = _infer_images(model, torch, device, samples, config)
+    paths = {mode: cache_dir / f"{tag}_{mode}_scores.jsonl" for mode in fusion_modes}
+    streams = {mode: path.open("w", encoding="utf-8") for mode, path in paths.items()}
+    try:
+        for item in outputs:
+            sample = item["sample"]
+            for mode in fusion_modes:
+                fused = _fuse_grid(item, config, mode)
+                heatmap_path = cache_dir / f"{tag}_{mode}_{sample['sample_id']}.npy"
+                np.save(heatmap_path, fused.astype(np.float32))
+                streams[mode].write(
+                    json.dumps(
+                        {
+                            "sample_id": sample["sample_id"],
+                            "anomaly_score": item["score"],
+                            "heatmap_npy": str(heatmap_path),
+                        },
+                        sort_keys=True,
+                    )
+                    + "\n"
+                )
+    finally:
+        for stream in streams.values():
+            stream.close()
+    return paths
+
+
 def run_unet_cv(
     config_path: str | Path = DEFAULT_CONFIG,
     dataset_root: str | Path = DEFAULT_DATASET,
     tiles_root: str | Path = DEFAULT_TILES,
-    experiments_dir: str | Path = DEFAULT_UNET_EXPERIMENTS,
     output_dir: str | Path = DEFAULT_OUTPUT,
     outer_folds: int = 5,
     seed: int = 20260809,
@@ -175,7 +218,6 @@ def run_unet_cv(
     config = load_unet_config(config_path)
     dataset = Path(dataset_root).resolve()
     tiles_root = Path(tiles_root).resolve()
-    experiments = Path(experiments_dir).resolve()
     output = Path(output_dir).resolve()
     if output.exists():
         raise FileExistsError(f"refusing to overwrite U-Net CV output: {output}")
@@ -183,9 +225,9 @@ def run_unet_cv(
     cache_root = output / "fold_cache"
     cache_root.mkdir()
 
-    selection = json.loads((experiments / "selection.json").read_text(encoding="utf-8"))
-    fusion_mode = selection["selected_fusion_mode"]
-    candidates = load_cv_candidates(experiments, fusion_mode)
+    fusion_modes = FROZEN_FUSION_MODES
+    candidates = frozen_postprocess_candidates("unet")
+    grid_fingerprint = candidate_grid_fingerprint("unet", candidates, fusion_modes)
 
     samples = []
     with (dataset / "samples.jsonl").open("r", encoding="utf-8") as stream:
@@ -251,17 +293,28 @@ def run_unet_cv(
         inner_val_tiles = [r for r in tile_records if r["entity_id"] in inner_val_entities]
         inner_val_images = [s for s in samples if s["entity_id"] in inner_val_entities]
 
+        assert_entity_isolation(
+            outer_test_entities=outer_test_entities,
+            fit_entities=inner_train_entities,
+            selection_entities=inner_val_entities,
+            early_stop_entities=inner_val_entities,
+        )
+
         trained = _train_fold_model(
             torch, device, config, inner_train_tiles, inner_val_tiles,
             cache_root / f"fold{fold}_unet.pt",
         )
         model = trained["model"]
 
-        inner_scores_path = _infer_fold_heatmaps(
-            model, torch, device, inner_val_images, config, fusion_mode,
+        inner_scores_paths = _infer_fold_heatmaps_by_fusion(
+            model, torch, device, inner_val_images, config, fusion_modes,
             cache_root, f"fold{fold}_inner",
         )
-        inner_records = _records_from_scores(inner_scores_path, inner_val_images)
+        inner_records_by_fusion = {
+            mode: _records_from_scores(path, inner_val_images)
+            for mode, path in inner_scores_paths.items()
+        }
+        inner_records = inner_records_by_fusion[fusion_modes[0]]
         inner_scores = [record["score"] for record in inner_records]
         inner_labels = [record["label"] for record in inner_records]
         if any(inner_labels) and not all(inner_labels):
@@ -270,25 +323,44 @@ def run_unet_cv(
             image_threshold = max(inner_scores, default=1.0) + 1e-6
 
         best_config = None
+        best_fusion_mode = None
         best_ranking = None
-        for candidate in candidates:
-            outcome = evaluate_config(inner_records, candidate, image_threshold)
-            metrics = outcome["metrics"]
-            ranking = (
-                metrics["acc_at_iou_0_5"],
-                metrics["box_f1"],
-                metrics["pixel_dice"],
-                -metrics["localization_negative_rate"],
-            )
-            if best_ranking is None or ranking > best_ranking:
-                best_ranking = ranking
-                best_config = candidate
+        inner_selection_metrics = []
+        for fusion_mode in fusion_modes:
+            for candidate in candidates:
+                outcome = evaluate_config(
+                    inner_records_by_fusion[fusion_mode], candidate, image_threshold
+                )
+                metrics = outcome["metrics"]
+                inner_selection_metrics.append(
+                    {
+                        "fusion_mode": fusion_mode,
+                        "config_fingerprint": candidate.fingerprint(),
+                        "metrics": metrics,
+                    }
+                )
+                ranking = (
+                    metrics["acc_at_iou_0_5"],
+                    metrics["box_f1"],
+                    metrics["pixel_dice"],
+                    -metrics["localization_negative_rate"],
+                )
+                if best_ranking is None or ranking > best_ranking:
+                    best_ranking = ranking
+                    best_config = candidate
+                    best_fusion_mode = fusion_mode
+
+        if best_config is None or best_fusion_mode is None:
+            raise RuntimeError("inner selection produced no U-Net candidate")
+        _cleanup_score_artifacts(list(inner_scores_paths.values()))
+        del inner_records_by_fusion, inner_records
 
         test_scores_path = _infer_fold_heatmaps(
-            model, torch, device, outer_test, config, fusion_mode,
+            model, torch, device, outer_test, config, best_fusion_mode,
             cache_root, f"fold{fold}_test",
         )
         test_records = _records_from_scores(test_scores_path, outer_test)
+        _cleanup_score_artifacts([test_scores_path])
         outcome = evaluate_config(test_records, best_config, image_threshold)
         fold_best_epoch = trained["best_epoch"]
         fold_best_dice = trained["best_validation_tile_dice"]
@@ -298,6 +370,11 @@ def run_unet_cv(
 
         for sample_result in outcome["per_sample"]:
             sample_result["outer_fold"] = fold
+            sample_result["entity_id"] = next(
+                sample["entity_id"]
+                for sample in outer_test
+                if sample["sample_id"] == sample_result["sample_id"]
+            )
         pooled_records.extend(outcome["per_sample"])
         fold_reports.append(
             {
@@ -305,11 +382,20 @@ def run_unet_cv(
                 "test_entities": sorted(outer_test_entities),
                 "test_images": len(outer_test),
                 "image_threshold": image_threshold,
+                "selected_fusion_mode": best_fusion_mode,
                 "selected_config": asdict(best_config),
                 "selected_config_fingerprint": best_config.fingerprint(),
                 "best_epoch": fold_best_epoch,
                 "best_inner_tile_dice": fold_best_dice,
                 "metrics": outcome["metrics"],
+                "selection_audit": {
+                    "outer_test_entities": sorted(outer_test_entities),
+                    "fit_entities": sorted(inner_train_entities),
+                    "early_stop_entities": sorted(inner_val_entities),
+                    "selection_entities": sorted(inner_val_entities),
+                    "candidate_source": "static_protocol_grid",
+                },
+                "inner_selection_metrics": inner_selection_metrics,
                 "seconds": round(time.perf_counter() - fold_started, 3),
             }
         )
@@ -317,18 +403,20 @@ def run_unet_cv(
     pooled_metrics = _pooled_metrics(pooled_records)
     report = {
         "schema_version": "1.0",
-        "phase": "phase8",
+        "phase": "phase8.1",
         "kind": "entity_grouped_cv_unet",
         "protocol_label": PROTOCOL_LABEL,
         "protocol_id": assignment.protocol_id,
         "protocol_fingerprint": assignment.fingerprint(),
         "model": "unet_resnet18_supervised",
-        "fusion_mode": fusion_mode,
+        "fusion_modes_considered": list(fusion_modes),
+        "candidate_grid_fingerprint": grid_fingerprint,
         "outer_folds": outer_folds,
         "inner_loop": "single entity-grouped holdout (training-cost bound)",
         "cv_max_epochs": CV_MAX_EPOCHS,
         "seed": seed,
         "candidate_configs": [asdict(config) for config in candidates],
+        "selection_scope": "inner_entities_only",
         "started_at": started_at,
         "ended_at": datetime.now(timezone.utc).isoformat(),
         "wall_seconds": round(time.perf_counter() - started, 3),
@@ -342,6 +430,9 @@ def run_unet_cv(
         },
         "external_holdout": False,
         "production_acceptance": False,
+        "test_labels_used_for_training": False,
+        "test_labels_used_for_postprocess_selection": False,
+        "test_labels_used_for_route_comparison": True,
     }
     (output / "per_sample_predictions.jsonl").write_text(
         "".join(json.dumps(record, sort_keys=True) + "\n" for record in pooled_records),
@@ -358,11 +449,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--dataset-root", type=Path, default=DEFAULT_DATASET)
     parser.add_argument("--tiles-root", type=Path, default=DEFAULT_TILES)
-    parser.add_argument("--experiments-dir", type=Path, default=DEFAULT_UNET_EXPERIMENTS)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args(argv)
     report = run_unet_cv(
-        args.config, args.dataset_root, args.tiles_root, args.experiments_dir, args.output_dir
+        args.config, args.dataset_root, args.tiles_root, args.output_dir
     )
     print(json.dumps({
         "protocol_label": report["protocol_label"],
