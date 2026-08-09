@@ -40,6 +40,21 @@ docs/deployment/mvis.sh release-validate fused \
   data/processed/ksdd_v0/images/kos10/Part0.jpg
 ```
 
-`pilot_failed` 是当前 PatchCore 冻结评测的诚实标记：分类有正向信号，但定位指标未达标。只有与 model/config/revision/data/prompt provenance 完全绑定的签名 evaluator attestation 才能使 `quality_accepted=true`；否则 production active 始终被拒绝。
+`pilot_failed` 是第七阶段 PatchCore 冻结评测的诚实标记：分类有正向信号，但定位指标未达标。只有与 model/config/revision/data/prompt provenance 完全绑定的签名 evaluator attestation 才能使 `quality_accepted=true`；否则 production active 始终被拒绝。
+
+## 第八阶段：定位修复（U-Net specialist）
+
+第八阶段解决了"分类有效、定位 Acc@IoU = 0"的核心问题：监督 U-Net（ResNet-18 编码器，BCE+Dice，256 tile）将定位从 0/9 提升到 6/9（test），实体分组交叉验证汇集 Acc@IoU 0.745 [0.611, 0.870]。使用第八阶段 specialist：
+
+```bash
+export MVIS_MODEL_MODE=real
+export MVIS_ANALYSIS_MODE=fused
+export MVIS_SPECIALIST_MANIFEST=artifacts/model/phase8/specialist_manifest_unet.json
+export MVIS_SPECIALIST_QUALITY_STATUS=pilot_candidate
+```
+
+`create_specialist_service_adapter` 按 manifest `algorithm` 分派 U-Net 或 PatchCore；第七阶段 manifest 始终可加载，即回滚路径。所有第八阶段评测数字为 `internal_pilot_validation`（test 已参与选择，实体分组 CV 为替代协议），`production_ready` 保持 `false`。
+
+证据：[第八阶段算法报告](docs/model/phase8_algorithm_report.md)、[定位失败案例报告](docs/qa/phase8_localization_failure_report.md)、[实体分组评测协议](docs/evaluation/phase8_entity_grouped_protocol.md)、[第八阶段面试讲稿](docs/qa/phase8_interview_script.md)。
 
 详细的配置、错误码、CORS、ModelOps 与资源边界见 [部署手册](docs/deployment/README.md)；最终证据见 [Phase 7 发布报告](docs/deployment/phase7_release_report.md)。

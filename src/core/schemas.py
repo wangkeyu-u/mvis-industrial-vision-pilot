@@ -30,6 +30,7 @@ class ObjectSource(StrEnum):
     FUSION = "fusion"
     EFFICIENT_AD = "efficientad"
     PATCHCORE = "patchcore"
+    UNET = "unet"
     MOCK = "mock"
 
 
