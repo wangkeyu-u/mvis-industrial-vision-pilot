@@ -78,28 +78,38 @@ def validate_sft_package(sft_root: str | Path) -> dict[str, Any]:
     ):
         raise ValueError("SFT package is not derived from the frozen KSDD V0 manifest")
     statistics = manifest.get("statistics")
-    if not isinstance(statistics, Mapping) or statistics.get("split_counts") != {
-        "train": 271,
-        "valid": 56,
-        "test": 56,
-    }:
-        raise ValueError("SFT package split counts differ from the frozen contract")
+    split_counts = statistics.get("split_counts") if isinstance(statistics, Mapping) else None
+    if (
+        not isinstance(split_counts, Mapping)
+        or set(split_counts) != {"train", "valid", "test"}
+        or any(not isinstance(split_counts[split], int) or split_counts[split] <= 0 for split in split_counts)
+    ):
+        raise ValueError("SFT package split counts are invalid")
     file_hashes = manifest.get("file_sha256")
     if not isinstance(file_hashes, Mapping):
         raise ValueError("SFT manifest file_sha256 is missing")
-    for relative in ("hf/train.jsonl", "hf/valid.jsonl", "hf/test.jsonl"):
+    for split in ("train", "valid", "test"):
+        relative = f"hf/{split}.jsonl"
         path = root / relative
         if not path.is_file() or _sha256(path) != file_hashes.get(relative):
             raise ValueError(f"SFT file hash mismatch: {relative}")
-    leakage = _read_json_object(root / "leakage_report.json")
+        if _count_jsonl_rows(path) != split_counts[split]:
+            raise ValueError(f"SFT row count mismatch: {relative}")
+    leakage_path = root / "leakage_report.json"
+    leakage = (
+        _read_json_object(leakage_path)
+        if leakage_path.is_file()
+        else manifest.get("leakage")
+    )
+    if not isinstance(leakage, Mapping):
+        raise ValueError("SFT leakage evidence is missing")
     if leakage.get("passes") is not True:
         raise ValueError("SFT package leakage gate did not pass")
-    for field in (
-        "train_test_sample_overlap",
-        "train_test_entity_overlap",
-        "train_test_image_sha256_overlap",
-    ):
-        if leakage.get(field) != []:
+    overlap_fields = [field for field in leakage if "overlap" in field]
+    if not overlap_fields:
+        raise ValueError("SFT leakage evidence has no overlap fields")
+    for field in overlap_fields:
+        if leakage[field] != []:
             raise ValueError(f"SFT leakage field is not empty: {field}")
     return manifest
 
@@ -114,8 +124,8 @@ def run_training(
     run_kind: str,
     validation_batches: int,
 ) -> dict[str, Any]:
-    if run_kind not in {"smoke", "formal"}:
-        raise ValueError("run_kind must be smoke or formal")
+    if run_kind not in {"probe", "smoke", "formal"}:
+        raise ValueError("run_kind must be probe, smoke, or formal")
     training_config = load_training_config(training_config_path)
     model_config = load_model_config(model_config_path)
     if training_config.method is not AdaptationMethod.QLORA:
@@ -126,6 +136,8 @@ def run_training(
         raise ValueError("base model quantization differs from training config")
     if steps <= 0 or steps > training_config.max_steps:
         raise ValueError("steps must be positive and no greater than configured max_steps")
+    if run_kind == "probe" and steps != 1:
+        raise ValueError("probe run must contain exactly one step")
     if run_kind == "smoke" and not 10 <= steps <= 20:
         raise ValueError("smoke run must contain 10-20 steps")
     if run_kind == "formal" and steps != training_config.max_steps:
@@ -150,6 +162,7 @@ def run_training(
     adapter_path = destination / "adapter" / "adapters.safetensors"
     memory_limit_mb = int(training_config.extra.get("memory_limit_mb", 12288))
     max_seq_length = int(training_config.extra.get("max_seq_length", 768))
+    image_resize_size = int(training_config.extra.get("image_resize_size", 0))
 
     with log_path.open("w", encoding="utf-8") as log_stream:
         tee_stdout = Tee(sys.stdout, log_stream)
@@ -164,6 +177,7 @@ def run_training(
                     steps=steps,
                     validation_batches=validation_batches,
                     max_seq_length=max_seq_length,
+                    image_resize_size=image_resize_size,
                     memory_limit_mb=memory_limit_mb,
                 )
             status = "completed"
@@ -228,6 +242,11 @@ def run_training(
             "gradient_checkpointing": training_config.gradient_checkpointing,
             "train_on_completions": True,
             "max_seq_length": max_seq_length,
+            "max_output_tokens": int(training_config.extra.get("max_output_tokens", 128)),
+            "image_resize_size": image_resize_size or None,
+            "vision_encoder_frozen": bool(
+                training_config.extra.get("vision_encoder_frozen", True)
+            ),
             "validation_batches": validation_batches,
         },
         "resources": {
@@ -268,6 +287,7 @@ def _train_official(
     steps: int,
     validation_batches: int,
     max_seq_length: int,
+    image_resize_size: int,
     memory_limit_mb: int,
 ) -> None:
     import mlx.core as mx
@@ -302,11 +322,22 @@ def _train_official(
         f"validation={len(dataset['validation'])}, transform={CONTRACT_TRANSFORM}"
     )
     model_dict = model.config.__dict__
+    image_resize_shape = (
+        (image_resize_size, image_resize_size) if image_resize_size > 0 else None
+    )
     train_dataset = VisionDataset(
-        dataset["train"], model_dict, processor, train_on_completions=True
+        dataset["train"],
+        model_dict,
+        processor,
+        train_on_completions=True,
+        image_resize_shape=image_resize_shape,
     )
     validation_dataset = VisionDataset(
-        dataset["validation"], model_dict, processor, train_on_completions=True
+        dataset["validation"],
+        model_dict,
+        processor,
+        train_on_completions=True,
+        image_resize_shape=image_resize_shape,
     )
 
     class SetupArgs:
@@ -353,6 +384,11 @@ def _read_json_object(path: Path) -> dict[str, Any]:
     return value
 
 
+def _count_jsonl_rows(path: Path) -> int:
+    with path.open("r", encoding="utf-8") as stream:
+        return sum(1 for line in stream if line.strip())
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -381,7 +417,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--sft-root", type=Path, default=DEFAULT_SFT_ROOT)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--steps", type=int, required=True)
-    parser.add_argument("--run-kind", choices=("smoke", "formal"), required=True)
+    parser.add_argument("--run-kind", choices=("probe", "smoke", "formal"), required=True)
     parser.add_argument("--validation-batches", type=int, default=2)
     arguments = parser.parse_args(argv)
     report = run_training(

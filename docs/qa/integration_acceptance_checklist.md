@@ -141,3 +141,20 @@ python3 -m json.tool ui/fixtures/evaluation-package.fixture.json >/dev/null
 | P6-10 | 真实浏览器对比 | 实际导入算法零样本与 LoRA 正式 pilot 包并记录证据 | 阻塞：LoRA smoke `resource_limit_exceeded`，adapter/package 未生成 |
 
 完整状态与真实零样本证据见 `docs/qa/phase6_baseline_lora_report.md`；8–10 分钟路径见 `docs/qa/phase6_interview_script.md`。
+
+## 第七阶段最终面试准入
+
+| 编号 | 验收项 | 通过标准 | 当前证据 |
+|---|---|---|---|
+| P7-01 | 三模式契约 | 客户端显式发送 `vlm_only/specialist_only/fused` | multipart/JSON 客户端 + 浏览器 Mock 通过 |
+| P7-02 | 证据链分层 | specialist 热力图/框来源、VLM 解释、fusion 冲突、复核原因分开 | fused/specialist_only 浏览器通过 |
+| P7-03 | 真实定位门禁 | 只有真实 specialist 或一致性门禁通过的 fused 可标记真实 | Mock/VLM/conflict 均 fail closed；真实 runtime 尚阻塞 |
+| P7-04 | 运行/质量分离 | VLM、specialist、analysis mode 的 runtime_ready/quality_status 分开 | 真实 readiness 浏览器通过 |
+| P7-05 | 真实包配对 | 两包哈希、KSDD manifest、56 个 sample ID 一致 | 真实 VLM/PatchCore package 浏览器通过 |
+| P7-06 | 提升与回退 | 五指标、CI、延迟/内存、切片和失败案例同时可读 | Macro-F1 +78.1 pp；IoU 0；FPR 回退，状态 `pilot_failed` |
+| P7-07 | Pilot 防误导 | 56 张结果不得展示为正式 KPI | `PILOT ONLY / FORMAL KPI LOCKED` 永久可见 |
+| P7-08 | 陈旧结果 | 不确定、拒答、超时、readiness 阻断和 422 后旧框/JSON 为空 | Mock + 真实 API 浏览器通过 |
+| P7-09 | 响应式/键盘 | 390×844 单列可读，模式选择、主操作和关闭可键盘达 | 浏览器 + UI 契约通过 |
+| P7-10 | 真实在线定位 | 真实 specialist/fused 返回框、heatmap、request_id/revision/耗时 | **阻塞**：specialist/fused `runtime_ready=false`，未伪造截图 |
+
+最终判断见 `docs/qa/phase7_final_acceptance.md`；8–10 分钟路径、亮点、失败复盘和常见追问见 `docs/qa/phase7_interview_script.md`。

@@ -1,0 +1,1054 @@
+{
+  "analysis_mode": "specialist_only",
+  "blockers": [],
+  "duration_ms": 408.395,
+  "hardware": {
+    "machine": "arm64",
+    "physical_memory_mb": 16384.0,
+    "python": "3.13.13",
+    "release": "25.5.0",
+    "system": "Darwin"
+  },
+  "pilot_status": "passed",
+  "preflight": {
+    "analysis_mode": "specialist_only",
+    "api_schema_version": "1.0.0",
+    "can_serve": true,
+    "checks": [
+      {
+        "details": {
+          "path": "configs/service/default.yaml"
+        },
+        "name": "service_config",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "path": "configs/models/qwen3_vl_2b_mlx_4bit.json"
+        },
+        "name": "model_config",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "configured": "1.0.0",
+          "implemented": "1.0.0"
+        },
+        "name": "api_schema",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "free_mb": 260878.43,
+          "minimum_free_mb": 2048,
+          "path": "."
+        },
+        "name": "disk_budget",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "budget_mb": 12288,
+          "note": "process peak is preflight-only, not model inference peak",
+          "physical_memory_mb": 16384.0,
+          "process_peak_mb": 4413.45
+        },
+        "name": "memory_budget",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "active_model": {
+            "adapter": "adapter",
+            "base": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+            "config_fingerprint": "6d4c4af9582eeafb587d2ad6d562f638ab6d5963cd040a10f57f087ebbae06d2",
+            "model_fingerprint": "7d01aa68d2e7f5a1e9b24204b5843c914fa8c374ac8f0ceb3f7eee57a6fdfd11",
+            "model_id": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+            "provenance": {
+              "adapter_hash": "69b4ff0ea1ee7b313ef1276d762c92c13cd02b8e6c01095237b8bf7848eb9275",
+              "backend": "mlx_vlm",
+              "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+              "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+              "config_fingerprint": "f43190af40a6431a",
+              "data_version": "ksdd-tile-sft-384-v1",
+              "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+              "prompt_version": "ksdd_prompt_v1",
+              "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+            },
+            "quality_accepted": false,
+            "quality_evidence": {
+              "algorithm": null,
+              "attestation_sha256": null,
+              "failure_reason": "attestation_missing",
+              "key_id": null,
+              "report_sha256": null,
+              "signature_verified": false
+            },
+            "quality_status": "pilot_candidate",
+            "quantization": "4-bit+lora",
+            "ready": true,
+            "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+            "runtime_ready": true,
+            "serving_tier": "pilot",
+            "source": "lora-adapter:adapter",
+            "state": "active",
+            "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+          },
+          "active_specialist": {
+            "active": true,
+            "base": "anomalib/patchcore-resnet18-ksdd-v0",
+            "provenance": {
+              "adapter_hash": null,
+              "backend": "anomalib-patchcore",
+              "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+              "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+              "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+              "data_version": "ksdd-0.1.0",
+              "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+              "prompt_version": "not-applicable",
+              "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+            },
+            "quality_accepted": false,
+            "quality_evidence": {
+              "algorithm": null,
+              "attestation_sha256": null,
+              "failure_reason": "attestation_missing",
+              "key_id": null,
+              "report_sha256": null,
+              "signature_verified": false
+            },
+            "quality_status": "pilot_failed",
+            "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "runtime_ready": true,
+            "serving_tier": "pilot",
+            "source": "specialist-manifest:run_manifest.json",
+            "specialist_id": "industrial-anomaly-specialist"
+          },
+          "analysis_mode": "specialist_only",
+          "runtime": {
+            "degraded": false,
+            "fallback_reason": null,
+            "requested_mode": "real",
+            "selected_mode": "real"
+          }
+        },
+        "name": "model_readiness",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "note": "pilot serving is allowed; production requires a matching signed evaluator report",
+          "quality_accepted": false,
+          "quality_status": "pilot_candidate",
+          "runtime_ready": true,
+          "serving_tier": "pilot"
+        },
+        "name": "quality_acceptance",
+        "required": false,
+        "status": "degraded"
+      }
+    ],
+    "code_version": "unknown",
+    "production_ready": false,
+    "report_type": "mvis_preflight",
+    "report_version": "1.0.0",
+    "runtime": {
+      "degraded": false,
+      "fallback_reason": null,
+      "requested_mode": "real",
+      "selected_mode": "real"
+    },
+    "service": "multimodal-vision-service",
+    "service_version": "0.1.0",
+    "status": "degraded",
+    "timestamp": "2026-08-09T00:46:11.708084+00:00"
+  },
+  "probes": {
+    "failure_recovery": {
+      "fault": {
+        "analysis_mode": null,
+        "api_latency_ms": null,
+        "error": {
+          "code": "INFERENCE_TIMEOUT",
+          "details": {},
+          "message": "inference exceeded 8s",
+          "request_id": "req_0bd59c59e5cf454699c8e109250ff8b8"
+        },
+        "human_review_required": null,
+        "model": null,
+        "objects": [],
+        "quality_accepted": null,
+        "quality_status": null,
+        "request_id": "req_0bd59c59e5cf454699c8e109250ff8b8",
+        "result": null,
+        "specialist": null,
+        "status_code": 504,
+        "uncertain": null,
+        "wall_latency_ms": 3.332,
+        "warnings": []
+      },
+      "included_in_latency": false,
+      "injection": "one-shot service-boundary timeout",
+      "recovery": {
+        "analysis_mode": "specialist_only",
+        "api_latency_ms": 31,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "anomalib/patchcore-resnet18-ksdd-v0",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_21168a240e324b45ba0f4e92a9df767f",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_df85d3366fbb4db999e3d9826729d818",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_df85d3366fbb4db999e3d9826729d818",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 32.849,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      }
+    },
+    "health": {
+      "body": {
+        "details": {
+          "aliases": {
+            "active": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+            "lora": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+            "previous": "qwen3-vl-2b-instruct-4bit",
+            "zero_shot": "qwen3-vl-2b-instruct-4bit"
+          },
+          "analysis_modes": {
+            "fused": {
+              "production_ready": false,
+              "quality_accepted": false,
+              "quality_status": "pilot_failed",
+              "runtime_ready": true,
+              "serving_tier": "pilot"
+            },
+            "specialist_only": {
+              "production_ready": false,
+              "quality_accepted": false,
+              "quality_status": "pilot_failed",
+              "runtime_ready": true,
+              "serving_tier": "pilot"
+            },
+            "vlm_only": {
+              "production_ready": false,
+              "quality_accepted": false,
+              "quality_status": "pilot_candidate",
+              "runtime_ready": true,
+              "serving_tier": "pilot"
+            }
+          },
+          "audit_sequence": 4,
+          "models": [
+            {
+              "adapter": null,
+              "base": "qwen3-vl-2b-instruct-4bit",
+              "config_fingerprint": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+              "model_fingerprint": "b344888376a4cae1caf262ec19da6feef21b31516b1f3a54624da180db6b0a26",
+              "model_id": "qwen3-vl-2b-instruct-4bit",
+              "provenance": {
+                "adapter_hash": null,
+                "backend": "mlx_vlm",
+                "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+                "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+                "config_fingerprint": "71b87d18c01aeb4d",
+                "data_version": "ksdd-0.1.0",
+                "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+                "prompt_version": "ksdd_prompt_v1",
+                "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+              },
+              "quality_accepted": false,
+              "quality_evidence": {
+                "algorithm": null,
+                "attestation_sha256": null,
+                "failure_reason": "attestation_missing",
+                "key_id": null,
+                "report_sha256": null,
+                "signature_verified": false
+              },
+              "quality_status": "pilot_failed",
+              "quantization": "4-bit",
+              "ready": true,
+              "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+              "runtime_ready": true,
+              "serving_tier": null,
+              "source": "model-config:qwen3_vl_2b_mlx_4bit.json",
+              "state": "validated",
+              "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+            },
+            {
+              "adapter": "adapter",
+              "base": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+              "config_fingerprint": "6d4c4af9582eeafb587d2ad6d562f638ab6d5963cd040a10f57f087ebbae06d2",
+              "model_fingerprint": "7d01aa68d2e7f5a1e9b24204b5843c914fa8c374ac8f0ceb3f7eee57a6fdfd11",
+              "model_id": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+              "provenance": {
+                "adapter_hash": "69b4ff0ea1ee7b313ef1276d762c92c13cd02b8e6c01095237b8bf7848eb9275",
+                "backend": "mlx_vlm",
+                "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+                "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+                "config_fingerprint": "f43190af40a6431a",
+                "data_version": "ksdd-tile-sft-384-v1",
+                "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+                "prompt_version": "ksdd_prompt_v1",
+                "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+              },
+              "quality_accepted": false,
+              "quality_evidence": {
+                "algorithm": null,
+                "attestation_sha256": null,
+                "failure_reason": "attestation_missing",
+                "key_id": null,
+                "report_sha256": null,
+                "signature_verified": false
+              },
+              "quality_status": "pilot_candidate",
+              "quantization": "4-bit+lora",
+              "ready": true,
+              "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+              "runtime_ready": true,
+              "serving_tier": "pilot",
+              "source": "lora-adapter:adapter",
+              "state": "active",
+              "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+            }
+          ],
+          "production_ready": false,
+          "quality_accepted": false,
+          "runtime": {
+            "degraded": false,
+            "fallback_reason": null,
+            "requested_mode": "real",
+            "selected_mode": "real"
+          },
+          "runtime_ready": true,
+          "specialist_aliases": {
+            "active": "industrial-anomaly-specialist"
+          },
+          "specialists": [
+            {
+              "active": true,
+              "base": "anomalib/patchcore-resnet18-ksdd-v0",
+              "provenance": {
+                "adapter_hash": null,
+                "backend": "anomalib-patchcore",
+                "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+                "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+                "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+                "data_version": "ksdd-0.1.0",
+                "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+                "prompt_version": "not-applicable",
+                "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+              },
+              "quality_accepted": false,
+              "quality_evidence": {
+                "algorithm": null,
+                "attestation_sha256": null,
+                "failure_reason": "attestation_missing",
+                "key_id": null,
+                "report_sha256": null,
+                "signature_verified": false
+              },
+              "quality_status": "pilot_failed",
+              "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+              "runtime_ready": true,
+              "serving_tier": "pilot",
+              "source": "specialist-manifest:run_manifest.json",
+              "specialist_id": "industrial-anomaly-specialist"
+            }
+          ]
+        },
+        "request_id": "req_41d2468e5ca24e1a9f26c8b490bd4c8b",
+        "status": "ready"
+      },
+      "request_id": "req_41d2468e5ca24e1a9f26c8b490bd4c8b",
+      "status_code": 200,
+      "wall_latency_ms": 1.504
+    },
+    "initial": {
+      "analysis_mode": "specialist_only",
+      "api_latency_ms": 167,
+      "error": null,
+      "human_review_required": false,
+      "model": {
+        "adapter": null,
+        "base": "anomalib/patchcore-resnet18-ksdd-v0",
+        "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+      },
+      "objects": [],
+      "quality_accepted": false,
+      "quality_status": "pilot_failed",
+      "request_id": "req_66787978b1f04ded8cc0fa1eed8dd1f5",
+      "result": "compliant",
+      "specialist": {
+        "detected": false,
+        "heatmap": {
+          "artifact_id": "hm_a63dec08e1ed479babbb2ec59e018fe0",
+          "expires_in_seconds": 300,
+          "height": 1265,
+          "media_type": "image/png",
+          "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+          "uri": "/v1/artifacts/heatmaps/hm_a63dec08e1ed479babbb2ec59e018fe0",
+          "width": 500
+        },
+        "objects": [],
+        "provenance": {
+          "adapter_hash": null,
+          "backend": "anomalib-patchcore",
+          "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+          "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+          "data_version": "ksdd-0.1.0",
+          "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+          "prompt_version": "not-applicable",
+          "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+        },
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+        "score": 11.937032699584961,
+        "source": "patchcore",
+        "specialist_id": "industrial-anomaly-specialist",
+        "threshold": 13.096867561340332
+      },
+      "status_code": 200,
+      "uncertain": false,
+      "wall_latency_ms": 169.758,
+      "warnings": [
+        "patchcore_validation_calibrated",
+        "quality:pilot_failed",
+        "serving_tier:pilot"
+      ]
+    },
+    "measured": [
+      {
+        "analysis_mode": "specialist_only",
+        "api_latency_ms": 18,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "anomalib/patchcore-resnet18-ksdd-v0",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_27ae0796927a4a45b1a8465ae8a3797c",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_e8e9f5115f3f422495626a75df5d30ab",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_e8e9f5115f3f422495626a75df5d30ab",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 20.143,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      }
+    ],
+    "models": {
+      "body": {
+        "aliases": {
+          "active": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+          "lora": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+          "previous": "qwen3-vl-2b-instruct-4bit",
+          "zero_shot": "qwen3-vl-2b-instruct-4bit"
+        },
+        "analysis_modes": {
+          "fused": {
+            "production_ready": false,
+            "quality_accepted": false,
+            "quality_status": "pilot_failed",
+            "runtime_ready": true,
+            "serving_tier": "pilot"
+          },
+          "specialist_only": {
+            "production_ready": false,
+            "quality_accepted": false,
+            "quality_status": "pilot_failed",
+            "runtime_ready": true,
+            "serving_tier": "pilot"
+          },
+          "vlm_only": {
+            "production_ready": false,
+            "quality_accepted": false,
+            "quality_status": "pilot_candidate",
+            "runtime_ready": true,
+            "serving_tier": "pilot"
+          }
+        },
+        "audit_sequence": 4,
+        "models": [
+          {
+            "adapter": null,
+            "base": "qwen3-vl-2b-instruct-4bit",
+            "config_fingerprint": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+            "model_fingerprint": "b344888376a4cae1caf262ec19da6feef21b31516b1f3a54624da180db6b0a26",
+            "model_id": "qwen3-vl-2b-instruct-4bit",
+            "provenance": {
+              "adapter_hash": null,
+              "backend": "mlx_vlm",
+              "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+              "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+              "config_fingerprint": "71b87d18c01aeb4d",
+              "data_version": "ksdd-0.1.0",
+              "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+              "prompt_version": "ksdd_prompt_v1",
+              "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+            },
+            "quality_accepted": false,
+            "quality_evidence": {
+              "algorithm": null,
+              "attestation_sha256": null,
+              "failure_reason": "attestation_missing",
+              "key_id": null,
+              "report_sha256": null,
+              "signature_verified": false
+            },
+            "quality_status": "pilot_failed",
+            "quantization": "4-bit",
+            "ready": true,
+            "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+            "runtime_ready": true,
+            "serving_tier": null,
+            "source": "model-config:qwen3_vl_2b_mlx_4bit.json",
+            "state": "validated",
+            "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+          },
+          {
+            "adapter": "adapter",
+            "base": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+            "config_fingerprint": "6d4c4af9582eeafb587d2ad6d562f638ab6d5963cd040a10f57f087ebbae06d2",
+            "model_fingerprint": "7d01aa68d2e7f5a1e9b24204b5843c914fa8c374ac8f0ceb3f7eee57a6fdfd11",
+            "model_id": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+            "provenance": {
+              "adapter_hash": "69b4ff0ea1ee7b313ef1276d762c92c13cd02b8e6c01095237b8bf7848eb9275",
+              "backend": "mlx_vlm",
+              "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+              "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+              "config_fingerprint": "f43190af40a6431a",
+              "data_version": "ksdd-tile-sft-384-v1",
+              "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+              "prompt_version": "ksdd_prompt_v1",
+              "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+            },
+            "quality_accepted": false,
+            "quality_evidence": {
+              "algorithm": null,
+              "attestation_sha256": null,
+              "failure_reason": "attestation_missing",
+              "key_id": null,
+              "report_sha256": null,
+              "signature_verified": false
+            },
+            "quality_status": "pilot_candidate",
+            "quantization": "4-bit+lora",
+            "ready": true,
+            "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+            "runtime_ready": true,
+            "serving_tier": "pilot",
+            "source": "lora-adapter:adapter",
+            "state": "active",
+            "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+          }
+        ],
+        "production_ready": false,
+        "quality_accepted": false,
+        "runtime": {
+          "degraded": false,
+          "fallback_reason": null,
+          "requested_mode": "real",
+          "selected_mode": "real"
+        },
+        "runtime_ready": true,
+        "specialist_aliases": {
+          "active": "industrial-anomaly-specialist"
+        },
+        "specialists": [
+          {
+            "active": true,
+            "base": "anomalib/patchcore-resnet18-ksdd-v0",
+            "provenance": {
+              "adapter_hash": null,
+              "backend": "anomalib-patchcore",
+              "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+              "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+              "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+              "data_version": "ksdd-0.1.0",
+              "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+              "prompt_version": "not-applicable",
+              "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+            },
+            "quality_accepted": false,
+            "quality_evidence": {
+              "algorithm": null,
+              "attestation_sha256": null,
+              "failure_reason": "attestation_missing",
+              "key_id": null,
+              "report_sha256": null,
+              "signature_verified": false
+            },
+            "quality_status": "pilot_failed",
+            "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "runtime_ready": true,
+            "serving_tier": "pilot",
+            "source": "specialist-manifest:run_manifest.json",
+            "specialist_id": "industrial-anomaly-specialist"
+          }
+        ]
+      },
+      "request_id": "req_069303af4d4f46f68f052b5065400381",
+      "status_code": 200,
+      "wall_latency_ms": 0.638
+    },
+    "version": {
+      "body": {
+        "api": "v1",
+        "code": "unknown",
+        "model": {
+          "adapter": "adapter",
+          "base": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "provenance": {
+          "adapter_hash": "69b4ff0ea1ee7b313ef1276d762c92c13cd02b8e6c01095237b8bf7848eb9275",
+          "backend": "mlx_vlm",
+          "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+          "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+          "config_fingerprint": "f43190af40a6431a",
+          "data_version": "ksdd-tile-sft-384-v1",
+          "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+          "prompt_version": "ksdd_prompt_v1",
+          "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+        },
+        "quality_accepted": false,
+        "quality_status": "pilot_candidate",
+        "runtime": {
+          "analysis_modes": {
+            "fused": {
+              "production_ready": false,
+              "quality_accepted": false,
+              "quality_status": "pilot_failed",
+              "runtime_ready": true,
+              "serving_tier": "pilot"
+            },
+            "specialist_only": {
+              "production_ready": false,
+              "quality_accepted": false,
+              "quality_status": "pilot_failed",
+              "runtime_ready": true,
+              "serving_tier": "pilot"
+            },
+            "vlm_only": {
+              "production_ready": false,
+              "quality_accepted": false,
+              "quality_status": "pilot_candidate",
+              "runtime_ready": true,
+              "serving_tier": "pilot"
+            }
+          },
+          "default_analysis_mode": "specialist_only",
+          "degraded": false,
+          "fallback_reason": null,
+          "production_ready": false,
+          "requested_mode": "real",
+          "runtime_ready": true,
+          "selected_mode": "real",
+          "specialist": {
+            "active": true,
+            "base": "anomalib/patchcore-resnet18-ksdd-v0",
+            "provenance": {
+              "adapter_hash": null,
+              "backend": "anomalib-patchcore",
+              "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+              "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+              "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+              "data_version": "ksdd-0.1.0",
+              "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+              "prompt_version": "not-applicable",
+              "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+            },
+            "quality_accepted": false,
+            "quality_evidence": {
+              "algorithm": null,
+              "attestation_sha256": null,
+              "failure_reason": "attestation_missing",
+              "key_id": null,
+              "report_sha256": null,
+              "signature_verified": false
+            },
+            "quality_status": "pilot_failed",
+            "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "runtime_ready": true,
+            "serving_tier": "pilot",
+            "source": "specialist-manifest:run_manifest.json",
+            "specialist_id": "industrial-anomaly-specialist"
+          }
+        },
+        "schema_version": "1.0.0",
+        "service": "multimodal-vision-service",
+        "serving_tier": "pilot"
+      },
+      "request_id": "req_78e483a853274bf1b9e5f51602c73a9a",
+      "status_code": 200,
+      "wall_latency_ms": 0.971
+    },
+    "warmup": []
+  },
+  "production_release_status": "blocked",
+  "protocol": {
+    "concurrency": 1,
+    "measured_runs": 1,
+    "mock_substitution_allowed": false,
+    "transport": "real_uvicorn_http",
+    "warmup_runs": 0
+  },
+  "quality_qualification": {
+    "production_ready": false,
+    "quality_accepted": false,
+    "quality_status": "pilot_failed",
+    "runtime_ready_is_separate": true,
+    "serving_tier": "pilot"
+  },
+  "registry": {
+    "aliases": {
+      "active": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+      "lora": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+      "previous": "qwen3-vl-2b-instruct-4bit",
+      "zero_shot": "qwen3-vl-2b-instruct-4bit"
+    },
+    "analysis_modes": {
+      "fused": {
+        "production_ready": false,
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "runtime_ready": true,
+        "serving_tier": "pilot"
+      },
+      "specialist_only": {
+        "production_ready": false,
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "runtime_ready": true,
+        "serving_tier": "pilot"
+      },
+      "vlm_only": {
+        "production_ready": false,
+        "quality_accepted": false,
+        "quality_status": "pilot_candidate",
+        "runtime_ready": true,
+        "serving_tier": "pilot"
+      }
+    },
+    "audit_sequence": 4,
+    "models": [
+      {
+        "adapter": null,
+        "base": "qwen3-vl-2b-instruct-4bit",
+        "config_fingerprint": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+        "model_fingerprint": "b344888376a4cae1caf262ec19da6feef21b31516b1f3a54624da180db6b0a26",
+        "model_id": "qwen3-vl-2b-instruct-4bit",
+        "provenance": {
+          "adapter_hash": null,
+          "backend": "mlx_vlm",
+          "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+          "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+          "config_fingerprint": "71b87d18c01aeb4d",
+          "data_version": "ksdd-0.1.0",
+          "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+          "prompt_version": "ksdd_prompt_v1",
+          "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+        },
+        "quality_accepted": false,
+        "quality_evidence": {
+          "algorithm": null,
+          "attestation_sha256": null,
+          "failure_reason": "attestation_missing",
+          "key_id": null,
+          "report_sha256": null,
+          "signature_verified": false
+        },
+        "quality_status": "pilot_failed",
+        "quantization": "4-bit",
+        "ready": true,
+        "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+        "runtime_ready": true,
+        "serving_tier": null,
+        "source": "model-config:qwen3_vl_2b_mlx_4bit.json",
+        "state": "validated",
+        "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+      },
+      {
+        "adapter": "adapter",
+        "base": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+        "config_fingerprint": "6d4c4af9582eeafb587d2ad6d562f638ab6d5963cd040a10f57f087ebbae06d2",
+        "model_fingerprint": "7d01aa68d2e7f5a1e9b24204b5843c914fa8c374ac8f0ceb3f7eee57a6fdfd11",
+        "model_id": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+        "provenance": {
+          "adapter_hash": "69b4ff0ea1ee7b313ef1276d762c92c13cd02b8e6c01095237b8bf7848eb9275",
+          "backend": "mlx_vlm",
+          "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+          "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+          "config_fingerprint": "f43190af40a6431a",
+          "data_version": "ksdd-tile-sft-384-v1",
+          "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+          "prompt_version": "ksdd_prompt_v1",
+          "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+        },
+        "quality_accepted": false,
+        "quality_evidence": {
+          "algorithm": null,
+          "attestation_sha256": null,
+          "failure_reason": "attestation_missing",
+          "key_id": null,
+          "report_sha256": null,
+          "signature_verified": false
+        },
+        "quality_status": "pilot_candidate",
+        "quantization": "4-bit+lora",
+        "ready": true,
+        "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+        "runtime_ready": true,
+        "serving_tier": "pilot",
+        "source": "lora-adapter:adapter",
+        "state": "active",
+        "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+      }
+    ],
+    "production_ready": false,
+    "quality_accepted": false,
+    "runtime": {
+      "degraded": false,
+      "fallback_reason": null,
+      "requested_mode": "real",
+      "selected_mode": "real"
+    },
+    "runtime_ready": true,
+    "specialist_aliases": {
+      "active": "industrial-anomaly-specialist"
+    },
+    "specialists": [
+      {
+        "active": true,
+        "base": "anomalib/patchcore-resnet18-ksdd-v0",
+        "provenance": {
+          "adapter_hash": null,
+          "backend": "anomalib-patchcore",
+          "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+          "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+          "data_version": "ksdd-0.1.0",
+          "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+          "prompt_version": "not-applicable",
+          "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+        },
+        "quality_accepted": false,
+        "quality_evidence": {
+          "algorithm": null,
+          "attestation_sha256": null,
+          "failure_reason": "attestation_missing",
+          "key_id": null,
+          "report_sha256": null,
+          "signature_verified": false
+        },
+        "quality_status": "pilot_failed",
+        "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+        "runtime_ready": true,
+        "serving_tier": "pilot",
+        "source": "specialist-manifest:run_manifest.json",
+        "specialist_id": "industrial-anomaly-specialist"
+      }
+    ]
+  },
+  "report_type": "mvis_phase7_release_acceptance",
+  "report_version": "1.0.0",
+  "rollback_qualification": {
+    "audit": {
+      "action": "rollback",
+      "active": "qwen3-vl-2b-instruct-4bit",
+      "actor": "phase7-release-validation",
+      "config_fingerprint": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+      "from_state": "validated",
+      "model_fingerprint": "b344888376a4cae1caf262ec19da6feef21b31516b1f3a54624da180db6b0a26",
+      "model_id": "qwen3-vl-2b-instruct-4bit",
+      "previous_active": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+      "quality_accepted": false,
+      "quality_status": "pilot_failed",
+      "reason": "isolated real candidate rollback probe",
+      "request_id": "phase7_real_rollback",
+      "result": "success",
+      "sequence": 5,
+      "serving_tier": "pilot",
+      "timestamp": "2026-08-09T00:46:12.031246+00:00",
+      "to_state": "active"
+    },
+    "from": "qwen3-vl-2b-instruct-4bit-lora-r4-tile384",
+    "mock_substitution_used": false,
+    "probe": {
+      "analysis_mode": "specialist_only",
+      "api_latency_ms": 18,
+      "error": null,
+      "human_review_required": false,
+      "model": {
+        "adapter": null,
+        "base": "anomalib/patchcore-resnet18-ksdd-v0",
+        "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+      },
+      "objects": [],
+      "quality_accepted": false,
+      "quality_status": "pilot_failed",
+      "request_id": "req_760a5e1969a845ef82cd3d03d14d090c",
+      "result": "compliant",
+      "specialist": {
+        "detected": false,
+        "heatmap": {
+          "artifact_id": "hm_6aff6ceed07c4201ad66b1819d322e0d",
+          "expires_in_seconds": 300,
+          "height": 1265,
+          "media_type": "image/png",
+          "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+          "uri": "/v1/artifacts/heatmaps/hm_6aff6ceed07c4201ad66b1819d322e0d",
+          "width": 500
+        },
+        "objects": [],
+        "provenance": {
+          "adapter_hash": null,
+          "backend": "anomalib-patchcore",
+          "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+          "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+          "data_version": "ksdd-0.1.0",
+          "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+          "prompt_version": "not-applicable",
+          "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+        },
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+        "score": 11.937032699584961,
+        "source": "patchcore",
+        "specialist_id": "industrial-anomaly-specialist",
+        "threshold": 13.096867561340332
+      },
+      "status_code": 200,
+      "uncertain": false,
+      "wall_latency_ms": 19.866,
+      "warnings": [
+        "patchcore_validation_calibrated",
+        "quality:pilot_failed",
+        "serving_tier:pilot"
+      ]
+    },
+    "real_candidate_exercised": true,
+    "reason": "isolated_registry_rollback_and_http_recovery",
+    "status": "passed",
+    "to": "qwen3-vl-2b-instruct-4bit"
+  },
+  "runtime_qualification": {
+    "accepted": true,
+    "measured_runs": 1,
+    "memory_budget_mb": 12288,
+    "mock_samples_used": false,
+    "mode": "specialist_only",
+    "post_failure_recovered": true,
+    "process_peak_memory_after_mb": 4503.14,
+    "process_peak_memory_before_mb": 4413.45,
+    "strict_real": true,
+    "successful_measured_runs": 1,
+    "timeout_failure_returned_504": true,
+    "wall_latency_ms": {
+      "count": 1,
+      "max": 20.143,
+      "mean": 20.143,
+      "min": 20.143,
+      "p50": 20.143,
+      "p95": 20.143
+    }
+  },
+  "sample": {
+    "byte_size": 277402,
+    "format": "jpeg",
+    "height": 1265,
+    "name": "Part0.jpg",
+    "sha256": "86148af3a4c148900096165380e6e88f9c2f0573e04e2b2b309efd751f8fef95",
+    "width": 500
+  },
+  "status": "passed",
+  "timestamp": "2026-08-09T00:46:11.707552+00:00"
+}

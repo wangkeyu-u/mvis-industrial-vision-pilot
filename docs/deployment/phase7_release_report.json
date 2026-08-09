@@ -1,0 +1,2886 @@
+{
+  "analysis_mode": "fused",
+  "blockers": [],
+  "duration_ms": 68904.083,
+  "hardware": {
+    "machine": "arm64",
+    "physical_memory_mb": 16384.0,
+    "python": "3.13.13",
+    "release": "25.5.0",
+    "system": "Darwin"
+  },
+  "pilot_status": "passed",
+  "preflight": {
+    "analysis_mode": "fused",
+    "api_schema_version": "1.0.0",
+    "can_serve": true,
+    "checks": [
+      {
+        "details": {
+          "path": "configs/service/default.yaml"
+        },
+        "name": "service_config",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "path": "configs/models/qwen3_vl_2b_mlx_4bit.json"
+        },
+        "name": "model_config",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "configured": "1.0.0",
+          "implemented": "1.0.0"
+        },
+        "name": "api_schema",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "free_mb": 260896.79,
+          "minimum_free_mb": 2048,
+          "path": "."
+        },
+        "name": "disk_budget",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "budget_mb": 12288,
+          "note": "process peak is preflight-only, not model inference peak",
+          "physical_memory_mb": 16384.0,
+          "process_peak_mb": 2579.22
+        },
+        "name": "memory_budget",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "active_model": {
+            "adapter": null,
+            "base": "qwen3-vl-2b-instruct-4bit",
+            "config_fingerprint": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+            "model_fingerprint": "b344888376a4cae1caf262ec19da6feef21b31516b1f3a54624da180db6b0a26",
+            "model_id": "qwen3-vl-2b-instruct-4bit",
+            "provenance": {
+              "adapter_hash": null,
+              "backend": "mlx_vlm",
+              "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+              "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+              "config_fingerprint": "71b87d18c01aeb4d",
+              "data_version": "ksdd-0.1.0",
+              "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+              "prompt_version": "ksdd_prompt_v1",
+              "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+            },
+            "quality_accepted": false,
+            "quality_evidence": {
+              "algorithm": null,
+              "attestation_sha256": null,
+              "failure_reason": "attestation_missing",
+              "key_id": null,
+              "report_sha256": null,
+              "signature_verified": false
+            },
+            "quality_status": "pilot_failed",
+            "quantization": "4-bit",
+            "ready": true,
+            "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+            "runtime_ready": true,
+            "serving_tier": "pilot",
+            "source": "model-config:qwen3_vl_2b_mlx_4bit.json",
+            "state": "active",
+            "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+          },
+          "active_specialist": {
+            "active": true,
+            "base": "anomalib/patchcore-resnet18-ksdd-v0",
+            "provenance": {
+              "adapter_hash": null,
+              "backend": "anomalib-patchcore",
+              "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+              "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+              "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+              "data_version": "ksdd-0.1.0",
+              "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+              "prompt_version": "not-applicable",
+              "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+            },
+            "quality_accepted": false,
+            "quality_evidence": {
+              "algorithm": null,
+              "attestation_sha256": null,
+              "failure_reason": "attestation_missing",
+              "key_id": null,
+              "report_sha256": null,
+              "signature_verified": false
+            },
+            "quality_status": "pilot_failed",
+            "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "runtime_ready": true,
+            "serving_tier": "pilot",
+            "source": "specialist-manifest:run_manifest.json",
+            "specialist_id": "industrial-anomaly-specialist"
+          },
+          "analysis_mode": "fused",
+          "runtime": {
+            "degraded": false,
+            "fallback_reason": null,
+            "requested_mode": "real",
+            "selected_mode": "real"
+          }
+        },
+        "name": "model_readiness",
+        "required": true,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "note": "pilot serving is allowed; production requires a matching signed evaluator report",
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "runtime_ready": true,
+          "serving_tier": "pilot"
+        },
+        "name": "quality_acceptance",
+        "required": false,
+        "status": "degraded"
+      }
+    ],
+    "code_version": "unknown",
+    "production_ready": false,
+    "report_type": "mvis_preflight",
+    "report_version": "1.0.0",
+    "runtime": {
+      "degraded": false,
+      "fallback_reason": null,
+      "requested_mode": "real",
+      "selected_mode": "real"
+    },
+    "service": "multimodal-vision-service",
+    "service_version": "0.1.0",
+    "status": "degraded",
+    "timestamp": "2026-08-09T00:42:53.747200+00:00"
+  },
+  "probes": {
+    "failure_recovery": {
+      "fault": {
+        "analysis_mode": null,
+        "api_latency_ms": null,
+        "error": {
+          "code": "INFERENCE_TIMEOUT",
+          "details": {},
+          "message": "inference exceeded 8s",
+          "request_id": "req_1ef66cf3216e4b68a1c86e9d2552c118"
+        },
+        "human_review_required": null,
+        "model": null,
+        "objects": [],
+        "quality_accepted": null,
+        "quality_status": null,
+        "request_id": "req_1ef66cf3216e4b68a1c86e9d2552c118",
+        "result": null,
+        "specialist": null,
+        "status_code": 504,
+        "uncertain": null,
+        "wall_latency_ms": 8.878,
+        "warnings": []
+      },
+      "included_in_latency": false,
+      "injection": "one-shot service-boundary timeout",
+      "recovery": {
+        "analysis_mode": "fused",
+        "api_latency_ms": 3719,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_a65ad73bde674009ab5cc794ecb7136b",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_12fd60adb87e4bfd8864307da9c94981",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_12fd60adb87e4bfd8864307da9c94981",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 3723.611,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      }
+    },
+    "health": {
+      "body": {
+        "details": {
+          "aliases": {
+            "active": "qwen3-vl-2b-instruct-4bit",
+            "candidate": "qwen3-vl-2b-instruct-4bit-lora-r8",
+            "lora": "qwen3-vl-2b-instruct-4bit-lora-r8",
+            "zero_shot": "qwen3-vl-2b-instruct-4bit"
+          },
+          "analysis_modes": {
+            "fused": {
+              "production_ready": false,
+              "quality_accepted": false,
+              "quality_status": "pilot_failed",
+              "runtime_ready": true,
+              "serving_tier": "pilot"
+            },
+            "specialist_only": {
+              "production_ready": false,
+              "quality_accepted": false,
+              "quality_status": "pilot_failed",
+              "runtime_ready": true,
+              "serving_tier": "pilot"
+            },
+            "vlm_only": {
+              "production_ready": false,
+              "quality_accepted": false,
+              "quality_status": "pilot_failed",
+              "runtime_ready": true,
+              "serving_tier": "pilot"
+            }
+          },
+          "audit_sequence": 2,
+          "models": [
+            {
+              "adapter": null,
+              "base": "qwen3-vl-2b-instruct-4bit",
+              "config_fingerprint": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+              "model_fingerprint": "b344888376a4cae1caf262ec19da6feef21b31516b1f3a54624da180db6b0a26",
+              "model_id": "qwen3-vl-2b-instruct-4bit",
+              "provenance": {
+                "adapter_hash": null,
+                "backend": "mlx_vlm",
+                "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+                "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+                "config_fingerprint": "71b87d18c01aeb4d",
+                "data_version": "ksdd-0.1.0",
+                "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+                "prompt_version": "ksdd_prompt_v1",
+                "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+              },
+              "quality_accepted": false,
+              "quality_evidence": {
+                "algorithm": null,
+                "attestation_sha256": null,
+                "failure_reason": "attestation_missing",
+                "key_id": null,
+                "report_sha256": null,
+                "signature_verified": false
+              },
+              "quality_status": "pilot_failed",
+              "quantization": "4-bit",
+              "ready": true,
+              "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+              "runtime_ready": true,
+              "serving_tier": "pilot",
+              "source": "model-config:qwen3_vl_2b_mlx_4bit.json",
+              "state": "active",
+              "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+            },
+            {
+              "adapter": null,
+              "base": "qwen3-vl-2b-instruct-4bit-lora-r8",
+              "config_fingerprint": "ab019b1a554923d1472a9da59e6cf33d55d2d8f78993a4a1d480a88642d0ed62",
+              "model_fingerprint": "de415c190946cc8a35cb3bf638a2ec3c1be8ecfa8c87c3c569eae27ed51b6a87",
+              "model_id": "qwen3-vl-2b-instruct-4bit-lora-r8",
+              "provenance": {
+                "adapter_hash": null,
+                "backend": "mlx_vlm",
+                "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+                "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+                "config_fingerprint": "339ab9f55bd27029",
+                "data_version": "ksdd_sft-1.0.0",
+                "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+                "prompt_version": "ksdd_prompt_v1",
+                "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+              },
+              "quality_accepted": false,
+              "quality_evidence": {
+                "algorithm": null,
+                "attestation_sha256": null,
+                "failure_reason": "attestation_missing",
+                "key_id": null,
+                "report_sha256": null,
+                "signature_verified": false
+              },
+              "quality_status": "unvalidated",
+              "quantization": "4-bit+lora",
+              "ready": false,
+              "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+              "runtime_ready": false,
+              "serving_tier": null,
+              "source": "lora-adapter:awaiting-artifact",
+              "state": "candidate",
+              "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+            }
+          ],
+          "production_ready": false,
+          "quality_accepted": false,
+          "runtime": {
+            "degraded": false,
+            "fallback_reason": null,
+            "requested_mode": "real",
+            "selected_mode": "real"
+          },
+          "runtime_ready": true,
+          "specialist_aliases": {
+            "active": "industrial-anomaly-specialist"
+          },
+          "specialists": [
+            {
+              "active": true,
+              "base": "anomalib/patchcore-resnet18-ksdd-v0",
+              "provenance": {
+                "adapter_hash": null,
+                "backend": "anomalib-patchcore",
+                "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+                "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+                "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+                "data_version": "ksdd-0.1.0",
+                "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+                "prompt_version": "not-applicable",
+                "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+              },
+              "quality_accepted": false,
+              "quality_evidence": {
+                "algorithm": null,
+                "attestation_sha256": null,
+                "failure_reason": "attestation_missing",
+                "key_id": null,
+                "report_sha256": null,
+                "signature_verified": false
+              },
+              "quality_status": "pilot_failed",
+              "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+              "runtime_ready": true,
+              "serving_tier": "pilot",
+              "source": "specialist-manifest:run_manifest.json",
+              "specialist_id": "industrial-anomaly-specialist"
+            }
+          ]
+        },
+        "request_id": "req_7ae10191b1a44e9fbd6218b92b4ff015",
+        "status": "ready"
+      },
+      "request_id": "req_7ae10191b1a44e9fbd6218b92b4ff015",
+      "status_code": 200,
+      "wall_latency_ms": 1.264
+    },
+    "initial": {
+      "analysis_mode": "fused",
+      "api_latency_ms": 1847,
+      "error": null,
+      "human_review_required": false,
+      "model": {
+        "adapter": null,
+        "base": "qwen3-vl-2b-instruct-4bit",
+        "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+      },
+      "objects": [],
+      "quality_accepted": false,
+      "quality_status": "pilot_failed",
+      "request_id": "req_e9b113ee80dd4097b5d624dbd16470ae",
+      "result": "compliant",
+      "specialist": {
+        "detected": false,
+        "heatmap": {
+          "artifact_id": "hm_af5e6ad9f3c340afb3bff8be1f580c1a",
+          "expires_in_seconds": 300,
+          "height": 1265,
+          "media_type": "image/png",
+          "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+          "uri": "/v1/artifacts/heatmaps/hm_af5e6ad9f3c340afb3bff8be1f580c1a",
+          "width": 500
+        },
+        "objects": [],
+        "provenance": {
+          "adapter_hash": null,
+          "backend": "anomalib-patchcore",
+          "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+          "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+          "data_version": "ksdd-0.1.0",
+          "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+          "prompt_version": "not-applicable",
+          "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+        },
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+        "score": 11.937032699584961,
+        "source": "patchcore",
+        "specialist_id": "industrial-anomaly-specialist",
+        "threshold": 13.096867561340332
+      },
+      "status_code": 200,
+      "uncertain": false,
+      "wall_latency_ms": 1853.83,
+      "warnings": [
+        "patchcore_validation_calibrated",
+        "fused_negative_agreement",
+        "quality:pilot_failed",
+        "serving_tier:pilot"
+      ]
+    },
+    "measured": [
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1807,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_b2838deea1b646498737b0e009320048",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_0dfdb1a745b646c1b0fa0b23c8163f58",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_0dfdb1a745b646c1b0fa0b23c8163f58",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1811.023,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1829,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_af37f96d7ff947f997d0946912235c2a",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_1429cd183b2844208d288c53fa5de43f",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_1429cd183b2844208d288c53fa5de43f",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1833.639,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1880,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_cd9b08dd03db49dc9c1c5046a803a193",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_fe2201c4d3c049be8811eba835c8c7fa",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_fe2201c4d3c049be8811eba835c8c7fa",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1883.365,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1862,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_72b1f8defeb04333bdc6803d3cd32d33",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_7205c7743f214020a1c82e5615722067",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_7205c7743f214020a1c82e5615722067",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1865.175,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1871,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_a89c560480804a24837b4050a376762b",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_00d6766704194f31915f4ebab90409a1",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_00d6766704194f31915f4ebab90409a1",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1874.605,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1868,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_934cb0b443a04efe83544a05c345210b",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_7fab6df1172d4140b37ac42f1b9411d5",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_7fab6df1172d4140b37ac42f1b9411d5",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1871.254,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1826,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_6ac51a6a80874285863b92f3e523fee2",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_29df0a7455a944629c9f0e37be2b4b9d",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_29df0a7455a944629c9f0e37be2b4b9d",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1828.791,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1800,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_a476cb40065543af810d379a787d922e",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_bf8ab4208ec94e008b5801fd0929062b",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_bf8ab4208ec94e008b5801fd0929062b",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1803.713,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1771,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_e6431f4262214088a28532c9595c3c18",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_ea9378aac9f8442c8c61a6391fca3cd4",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_ea9378aac9f8442c8c61a6391fca3cd4",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1774.312,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1762,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_c7dca2eabad445af8418fc953fd3f309",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_e0241d4dce89478dbed88afdf914d011",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_e0241d4dce89478dbed88afdf914d011",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1765.369,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1770,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_df3eddd102304dc182cfa38ad97d24f0",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_fd41e45e889145deafc4e1d3ec9cbc26",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_fd41e45e889145deafc4e1d3ec9cbc26",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1773.416,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1757,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_0a02d94c048b43b994cf3cbd5e3e9c4d",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_6ef268ba42a1419296e1d4e6260a247c",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_6ef268ba42a1419296e1d4e6260a247c",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1760.249,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1761,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_bb0c8ca2cb114405bf4536281bd3ad00",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_cbd061e845ff456fbae36e4b0eddfbd3",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_cbd061e845ff456fbae36e4b0eddfbd3",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1763.32,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1766,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_8d0ca86e1053407686b828760edfdcce",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_b6dafcb62e354bac82fda3d8eb56f437",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_b6dafcb62e354bac82fda3d8eb56f437",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1770.542,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1782,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_3c293cf795b148e6a62379a68a69f36e",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_3c095989385f438c979740724e7360d1",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_3c095989385f438c979740724e7360d1",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1785.3,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1776,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_aba0c6ea2d454d42b88264414c6ce1e5",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_35ab9c7384f94b388d633460a8610c6d",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_35ab9c7384f94b388d633460a8610c6d",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1779.643,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1772,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_473f14f1bf624a15a1c646dbb262b81d",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_317ff231937f4258b8cfdae7e4df67ef",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_317ff231937f4258b8cfdae7e4df67ef",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1775.922,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1776,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_e3cdf5ef2aa6420f85dc853fceff05e7",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_c5a5f920347a48a4a85f76a0efa4bf0b",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_c5a5f920347a48a4a85f76a0efa4bf0b",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1779.973,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1768,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_ec4d4c99a905441e952189197188f357",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_c4ec1feedbf44bdaaba5a7cfa9f800de",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_c4ec1feedbf44bdaaba5a7cfa9f800de",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1772.317,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1760,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_1909c45e32e7461d9355c3e08960e73e",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_55536d64009d4ddcbf08e7c38e8b45a5",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_55536d64009d4ddcbf08e7c38e8b45a5",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1763.431,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1830,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_fa4818933f334fb1a1b62bef6967664c",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_70a1cfd676754056aab6675c2f897981",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_70a1cfd676754056aab6675c2f897981",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1833.987,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1775,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_ff461121759c48b6829b8c7685e09d59",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_378e261c790f4229b522e43730842792",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_378e261c790f4229b522e43730842792",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1778.431,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1827,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_3b13d42bee5f4383a30b98659b904615",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_4db3eb7efbf541d0ac2b561492342158",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_4db3eb7efbf541d0ac2b561492342158",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1829.816,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1882,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_bc56ae2f14404e5dbeabd5304ec49c73",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_3ed169437f7a4576996af08af7b9c520",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_3ed169437f7a4576996af08af7b9c520",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1886.032,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1810,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_3bd32ba5a1d4496db40d6a3dc4788d5f",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_79737aeb83454ef594161bd2afacdb4b",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_79737aeb83454ef594161bd2afacdb4b",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1813.666,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1784,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_46d95a028a4446fdbf18289239b3e8e3",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_e3bd54fb58524857ab120c217a1188a2",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_e3bd54fb58524857ab120c217a1188a2",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1787.48,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1772,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_534d682adeab4fd58946a21430e6a8c0",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_231c85225c2f4ddd928f50c681e6a408",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_231c85225c2f4ddd928f50c681e6a408",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1775.752,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1764,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_d5a5235d80b244b68ae7f4350a2a9945",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_b68d6dcfc75549ecbc5ccef8fc45ef8a",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_b68d6dcfc75549ecbc5ccef8fc45ef8a",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1768.109,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1781,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_e2acd4ea4e3c4a4597415318dee709c9",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_95ccf7ea4e7e4fb1b641b4d24e260d64",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_95ccf7ea4e7e4fb1b641b4d24e260d64",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1784.178,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1807,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_97dcfed088984adab304fc1dcb2cbc37",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_97de545c0eb044a69c07f71b10a3991d",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_97de545c0eb044a69c07f71b10a3991d",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1811.081,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      }
+    ],
+    "models": {
+      "body": {
+        "aliases": {
+          "active": "qwen3-vl-2b-instruct-4bit",
+          "candidate": "qwen3-vl-2b-instruct-4bit-lora-r8",
+          "lora": "qwen3-vl-2b-instruct-4bit-lora-r8",
+          "zero_shot": "qwen3-vl-2b-instruct-4bit"
+        },
+        "analysis_modes": {
+          "fused": {
+            "production_ready": false,
+            "quality_accepted": false,
+            "quality_status": "pilot_failed",
+            "runtime_ready": true,
+            "serving_tier": "pilot"
+          },
+          "specialist_only": {
+            "production_ready": false,
+            "quality_accepted": false,
+            "quality_status": "pilot_failed",
+            "runtime_ready": true,
+            "serving_tier": "pilot"
+          },
+          "vlm_only": {
+            "production_ready": false,
+            "quality_accepted": false,
+            "quality_status": "pilot_failed",
+            "runtime_ready": true,
+            "serving_tier": "pilot"
+          }
+        },
+        "audit_sequence": 2,
+        "models": [
+          {
+            "adapter": null,
+            "base": "qwen3-vl-2b-instruct-4bit",
+            "config_fingerprint": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+            "model_fingerprint": "b344888376a4cae1caf262ec19da6feef21b31516b1f3a54624da180db6b0a26",
+            "model_id": "qwen3-vl-2b-instruct-4bit",
+            "provenance": {
+              "adapter_hash": null,
+              "backend": "mlx_vlm",
+              "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+              "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+              "config_fingerprint": "71b87d18c01aeb4d",
+              "data_version": "ksdd-0.1.0",
+              "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+              "prompt_version": "ksdd_prompt_v1",
+              "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+            },
+            "quality_accepted": false,
+            "quality_evidence": {
+              "algorithm": null,
+              "attestation_sha256": null,
+              "failure_reason": "attestation_missing",
+              "key_id": null,
+              "report_sha256": null,
+              "signature_verified": false
+            },
+            "quality_status": "pilot_failed",
+            "quantization": "4-bit",
+            "ready": true,
+            "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+            "runtime_ready": true,
+            "serving_tier": "pilot",
+            "source": "model-config:qwen3_vl_2b_mlx_4bit.json",
+            "state": "active",
+            "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+          },
+          {
+            "adapter": null,
+            "base": "qwen3-vl-2b-instruct-4bit-lora-r8",
+            "config_fingerprint": "ab019b1a554923d1472a9da59e6cf33d55d2d8f78993a4a1d480a88642d0ed62",
+            "model_fingerprint": "de415c190946cc8a35cb3bf638a2ec3c1be8ecfa8c87c3c569eae27ed51b6a87",
+            "model_id": "qwen3-vl-2b-instruct-4bit-lora-r8",
+            "provenance": {
+              "adapter_hash": null,
+              "backend": "mlx_vlm",
+              "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+              "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+              "config_fingerprint": "339ab9f55bd27029",
+              "data_version": "ksdd_sft-1.0.0",
+              "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+              "prompt_version": "ksdd_prompt_v1",
+              "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+            },
+            "quality_accepted": false,
+            "quality_evidence": {
+              "algorithm": null,
+              "attestation_sha256": null,
+              "failure_reason": "attestation_missing",
+              "key_id": null,
+              "report_sha256": null,
+              "signature_verified": false
+            },
+            "quality_status": "unvalidated",
+            "quantization": "4-bit+lora",
+            "ready": false,
+            "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+            "runtime_ready": false,
+            "serving_tier": null,
+            "source": "lora-adapter:awaiting-artifact",
+            "state": "candidate",
+            "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+          }
+        ],
+        "production_ready": false,
+        "quality_accepted": false,
+        "runtime": {
+          "degraded": false,
+          "fallback_reason": null,
+          "requested_mode": "real",
+          "selected_mode": "real"
+        },
+        "runtime_ready": true,
+        "specialist_aliases": {
+          "active": "industrial-anomaly-specialist"
+        },
+        "specialists": [
+          {
+            "active": true,
+            "base": "anomalib/patchcore-resnet18-ksdd-v0",
+            "provenance": {
+              "adapter_hash": null,
+              "backend": "anomalib-patchcore",
+              "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+              "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+              "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+              "data_version": "ksdd-0.1.0",
+              "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+              "prompt_version": "not-applicable",
+              "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+            },
+            "quality_accepted": false,
+            "quality_evidence": {
+              "algorithm": null,
+              "attestation_sha256": null,
+              "failure_reason": "attestation_missing",
+              "key_id": null,
+              "report_sha256": null,
+              "signature_verified": false
+            },
+            "quality_status": "pilot_failed",
+            "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "runtime_ready": true,
+            "serving_tier": "pilot",
+            "source": "specialist-manifest:run_manifest.json",
+            "specialist_id": "industrial-anomaly-specialist"
+          }
+        ]
+      },
+      "request_id": "req_6663a1f1011d4789bc69fb1447eb72fb",
+      "status_code": 200,
+      "wall_latency_ms": 0.51
+    },
+    "version": {
+      "body": {
+        "api": "v1",
+        "code": "unknown",
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "provenance": {
+          "adapter_hash": null,
+          "backend": "mlx_vlm",
+          "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+          "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+          "config_fingerprint": "71b87d18c01aeb4d",
+          "data_version": "ksdd-0.1.0",
+          "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+          "prompt_version": "ksdd_prompt_v1",
+          "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+        },
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "runtime": {
+          "analysis_modes": {
+            "fused": {
+              "production_ready": false,
+              "quality_accepted": false,
+              "quality_status": "pilot_failed",
+              "runtime_ready": true,
+              "serving_tier": "pilot"
+            },
+            "specialist_only": {
+              "production_ready": false,
+              "quality_accepted": false,
+              "quality_status": "pilot_failed",
+              "runtime_ready": true,
+              "serving_tier": "pilot"
+            },
+            "vlm_only": {
+              "production_ready": false,
+              "quality_accepted": false,
+              "quality_status": "pilot_failed",
+              "runtime_ready": true,
+              "serving_tier": "pilot"
+            }
+          },
+          "default_analysis_mode": "fused",
+          "degraded": false,
+          "fallback_reason": null,
+          "production_ready": false,
+          "requested_mode": "real",
+          "runtime_ready": true,
+          "selected_mode": "real",
+          "specialist": {
+            "active": true,
+            "base": "anomalib/patchcore-resnet18-ksdd-v0",
+            "provenance": {
+              "adapter_hash": null,
+              "backend": "anomalib-patchcore",
+              "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+              "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+              "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+              "data_version": "ksdd-0.1.0",
+              "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+              "prompt_version": "not-applicable",
+              "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+            },
+            "quality_accepted": false,
+            "quality_evidence": {
+              "algorithm": null,
+              "attestation_sha256": null,
+              "failure_reason": "attestation_missing",
+              "key_id": null,
+              "report_sha256": null,
+              "signature_verified": false
+            },
+            "quality_status": "pilot_failed",
+            "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "runtime_ready": true,
+            "serving_tier": "pilot",
+            "source": "specialist-manifest:run_manifest.json",
+            "specialist_id": "industrial-anomaly-specialist"
+          }
+        },
+        "schema_version": "1.0.0",
+        "service": "multimodal-vision-service",
+        "serving_tier": "pilot"
+      },
+      "request_id": "req_f7680241aa7e4acc876d76695a60d4c6",
+      "status_code": 200,
+      "wall_latency_ms": 0.671
+    },
+    "warmup": [
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1759,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_9100f95c14d14409be25d26254182e1a",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_3e39b9892ed34192b008f644c7c7dd12",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_3e39b9892ed34192b008f644c7c7dd12",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1762.894,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1822,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_98c1012d79a24fb089d0da8ac032e42f",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_9049c7c79e524887a99ed5891d3d3918",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_9049c7c79e524887a99ed5891d3d3918",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1825.623,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1803,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_18e7e1e170b44988a2830ee7f9e31145",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_88177ad45bc74daea290099c20783f6f",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_88177ad45bc74daea290099c20783f6f",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1808.657,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1800,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_eb26d8676ee34b9e96044b3541019a6a",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_0b2f47ea1f184219aab688881ad950c1",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_0b2f47ea1f184219aab688881ad950c1",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1804.5,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      },
+      {
+        "analysis_mode": "fused",
+        "api_latency_ms": 1796,
+        "error": null,
+        "human_review_required": false,
+        "model": {
+          "adapter": null,
+          "base": "qwen3-vl-2b-instruct-4bit",
+          "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc"
+        },
+        "objects": [],
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "request_id": "req_af16e10b6cad403fa7c252878fa1f63e",
+        "result": "compliant",
+        "specialist": {
+          "detected": false,
+          "heatmap": {
+            "artifact_id": "hm_bebfcb1ca48e4acb9f136e6c76b230e4",
+            "expires_in_seconds": 300,
+            "height": 1265,
+            "media_type": "image/png",
+            "sha256": "381ed473bb7a883d0622d7cd12638b6aa0db4838c2799287e98ca0337a324148",
+            "uri": "/v1/artifacts/heatmaps/hm_bebfcb1ca48e4acb9f136e6c76b230e4",
+            "width": 500
+          },
+          "objects": [],
+          "provenance": {
+            "adapter_hash": null,
+            "backend": "anomalib-patchcore",
+            "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+            "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+            "data_version": "ksdd-0.1.0",
+            "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+            "prompt_version": "not-applicable",
+            "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+          },
+          "quality_accepted": false,
+          "quality_status": "pilot_failed",
+          "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "score": 11.937032699584961,
+          "source": "patchcore",
+          "specialist_id": "industrial-anomaly-specialist",
+          "threshold": 13.096867561340332
+        },
+        "status_code": 200,
+        "uncertain": false,
+        "wall_latency_ms": 1800.331,
+        "warnings": [
+          "patchcore_validation_calibrated",
+          "fused_negative_agreement",
+          "quality:pilot_failed",
+          "serving_tier:pilot"
+        ]
+      }
+    ]
+  },
+  "production_release_status": "blocked",
+  "protocol": {
+    "concurrency": 1,
+    "measured_runs": 30,
+    "mock_substitution_allowed": false,
+    "transport": "real_uvicorn_http",
+    "warmup_runs": 5
+  },
+  "quality_qualification": {
+    "production_ready": false,
+    "quality_accepted": false,
+    "quality_status": "pilot_failed",
+    "runtime_ready_is_separate": true,
+    "serving_tier": "pilot"
+  },
+  "registry": {
+    "aliases": {
+      "active": "qwen3-vl-2b-instruct-4bit",
+      "candidate": "qwen3-vl-2b-instruct-4bit-lora-r8",
+      "lora": "qwen3-vl-2b-instruct-4bit-lora-r8",
+      "zero_shot": "qwen3-vl-2b-instruct-4bit"
+    },
+    "analysis_modes": {
+      "fused": {
+        "production_ready": false,
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "runtime_ready": true,
+        "serving_tier": "pilot"
+      },
+      "specialist_only": {
+        "production_ready": false,
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "runtime_ready": true,
+        "serving_tier": "pilot"
+      },
+      "vlm_only": {
+        "production_ready": false,
+        "quality_accepted": false,
+        "quality_status": "pilot_failed",
+        "runtime_ready": true,
+        "serving_tier": "pilot"
+      }
+    },
+    "audit_sequence": 2,
+    "models": [
+      {
+        "adapter": null,
+        "base": "qwen3-vl-2b-instruct-4bit",
+        "config_fingerprint": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+        "model_fingerprint": "b344888376a4cae1caf262ec19da6feef21b31516b1f3a54624da180db6b0a26",
+        "model_id": "qwen3-vl-2b-instruct-4bit",
+        "provenance": {
+          "adapter_hash": null,
+          "backend": "mlx_vlm",
+          "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+          "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+          "config_fingerprint": "71b87d18c01aeb4d",
+          "data_version": "ksdd-0.1.0",
+          "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+          "prompt_version": "ksdd_prompt_v1",
+          "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+        },
+        "quality_accepted": false,
+        "quality_evidence": {
+          "algorithm": null,
+          "attestation_sha256": null,
+          "failure_reason": "attestation_missing",
+          "key_id": null,
+          "report_sha256": null,
+          "signature_verified": false
+        },
+        "quality_status": "pilot_failed",
+        "quantization": "4-bit",
+        "ready": true,
+        "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+        "runtime_ready": true,
+        "serving_tier": "pilot",
+        "source": "model-config:qwen3_vl_2b_mlx_4bit.json",
+        "state": "active",
+        "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+      },
+      {
+        "adapter": null,
+        "base": "qwen3-vl-2b-instruct-4bit-lora-r8",
+        "config_fingerprint": "ab019b1a554923d1472a9da59e6cf33d55d2d8f78993a4a1d480a88642d0ed62",
+        "model_fingerprint": "de415c190946cc8a35cb3bf638a2ec3c1be8ecfa8c87c3c569eae27ed51b6a87",
+        "model_id": "qwen3-vl-2b-instruct-4bit-lora-r8",
+        "provenance": {
+          "adapter_hash": null,
+          "backend": "mlx_vlm",
+          "checkpoint_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+          "config_artifact_sha256": "ef76aa6b9a49d5a1ea1066907c31e85cb914bb2c5726096042c89a019ed45cf1",
+          "config_fingerprint": "339ab9f55bd27029",
+          "data_version": "ksdd_sft-1.0.0",
+          "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+          "prompt_version": "ksdd_prompt_v1",
+          "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+        },
+        "quality_accepted": false,
+        "quality_evidence": {
+          "algorithm": null,
+          "attestation_sha256": null,
+          "failure_reason": "attestation_missing",
+          "key_id": null,
+          "report_sha256": null,
+          "signature_verified": false
+        },
+        "quality_status": "unvalidated",
+        "quantization": "4-bit+lora",
+        "ready": false,
+        "revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+        "runtime_ready": false,
+        "serving_tier": null,
+        "source": "lora-adapter:awaiting-artifact",
+        "state": "candidate",
+        "weight_hash": "4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb"
+      }
+    ],
+    "production_ready": false,
+    "quality_accepted": false,
+    "runtime": {
+      "degraded": false,
+      "fallback_reason": null,
+      "requested_mode": "real",
+      "selected_mode": "real"
+    },
+    "runtime_ready": true,
+    "specialist_aliases": {
+      "active": "industrial-anomaly-specialist"
+    },
+    "specialists": [
+      {
+        "active": true,
+        "base": "anomalib/patchcore-resnet18-ksdd-v0",
+        "provenance": {
+          "adapter_hash": null,
+          "backend": "anomalib-patchcore",
+          "checkpoint_revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+          "config_artifact_sha256": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+          "config_fingerprint": "67e116edf77de8b1ede6907416dc8abb932afe5f4fe95b857d20c794ba98158e",
+          "data_version": "ksdd-0.1.0",
+          "model_id": "anomalib/patchcore-resnet18-ksdd-v0",
+          "prompt_version": "not-applicable",
+          "weight_hash": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681"
+        },
+        "quality_accepted": false,
+        "quality_evidence": {
+          "algorithm": null,
+          "attestation_sha256": null,
+          "failure_reason": "attestation_missing",
+          "key_id": null,
+          "report_sha256": null,
+          "signature_verified": false
+        },
+        "quality_status": "pilot_failed",
+        "revision": "1ad6587c26805639d9dc6c323a468f0da113f48e2d8e481ae5d0ab595734a681",
+        "runtime_ready": true,
+        "serving_tier": "pilot",
+        "source": "specialist-manifest:run_manifest.json",
+        "specialist_id": "industrial-anomaly-specialist"
+      }
+    ]
+  },
+  "report_type": "mvis_phase7_release_acceptance",
+  "report_version": "1.0.0",
+  "rollback_qualification": {
+    "mock_substitution_used": false,
+    "real_candidate_exercised": false,
+    "reason": "no_ready_previous_real_candidate",
+    "status": "blocked"
+  },
+  "runtime_qualification": {
+    "accepted": true,
+    "measured_runs": 30,
+    "memory_budget_mb": 12288,
+    "mock_samples_used": false,
+    "mode": "fused",
+    "post_failure_recovered": true,
+    "process_peak_memory_after_mb": 2730.05,
+    "process_peak_memory_before_mb": 2579.22,
+    "strict_real": true,
+    "successful_measured_runs": 30,
+    "timeout_failure_returned_504": true,
+    "wall_latency_ms": {
+      "count": 30,
+      "max": 1886.032,
+      "mean": 1803.463,
+      "min": 1760.249,
+      "p50": 1784.178,
+      "p95": 1883.365
+    }
+  },
+  "sample": {
+    "byte_size": 277402,
+    "format": "jpeg",
+    "height": 1265,
+    "name": "Part0.jpg",
+    "sha256": "86148af3a4c148900096165380e6e88f9c2f0573e04e2b2b309efd751f8fef95",
+    "width": 500
+  },
+  "status": "passed",
+  "timestamp": "2026-08-09T00:42:53.746931+00:00"
+}

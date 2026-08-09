@@ -1,0 +1,14 @@
+dataset_version: ksdd_tiled-1.0.0
+prompt_version: ksdd_tile_audit_prompt-1.0.0
+source_root: data/processed/ksdd_v0
+source_lock: configs/data/ksdd_v0.lock.json
+output_root: data/processed/ksdd_tiled_v1
+tile_sizes: [256, 384]
+sampling:
+  positive: full_mask_coverage
+  defect_image_negative: deterministic_mask_free
+  normal_image_negative: deterministic_crop
+split_policy:
+  inherit_frozen_entity_split: true
+  forbid_test_derived_training_tiles: true
+pilot_only: true

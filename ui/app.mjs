@@ -1,4 +1,5 @@
 import { AnalysisClientError, createAnalysisClient, validateImageFile } from "/src/client/api-client.mjs";
+import { normalizeEvidencePresentation } from "/src/client/evidence-presentation.mjs";
 import {
   RealAcceptanceError,
   buildRealAcceptanceArtifact,
@@ -19,10 +20,14 @@ const client = createAnalysisClient({ mode: clientMode, endpoint, transport, req
 
 const elements = Object.fromEntries([
   "image-input", "drop-zone", "demo-sample", "licensed-probe", "file-summary", "file-name", "file-meta", "query-input",
-  "task-select", "model-select", "specialist-toggle", "form-alert", "analyze-button",
+  "task-select", "model-select", "specialist-toggle", "specialist-mode-select", "specialist-mode-field", "form-alert", "analyze-button",
   "preview-image", "overlay-canvas", "image-stage", "stage-empty", "stage-loader",
+  "heatmap-overlay", "heatmap-legend",
   "case-state", "result-card", "result-icon", "result-label", "result-reason", "warning-list",
   "evidence-list",
+  "evidence-chain", "evidence-mode", "localization-seal", "specialist-source", "specialist-heatmap",
+  "vlm-explanation", "fusion-card", "fusion-status", "fusion-reason", "review-card", "review-status",
+  "review-reasons", "localization-reason",
   "model-base", "model-adapter", "latency-total", "latency-detail", "trace-source",
   "request-id", "copy-json", "download-json", "download-evidence", "clear-case", "client-mode",
   "runtime-status", "runtime-label",
@@ -35,6 +40,7 @@ let selectedFile = null;
 let selectedProbe = null;
 let imageDimensions = null;
 let latestResult = null;
+let latestEvidencePresentation = null;
 let latestError = null;
 let latestReadiness = null;
 let previewUrl = null;
@@ -228,6 +234,8 @@ function prepareAcceptanceExport(outcome) {
       request_id: latestReadiness.requestId,
       runtime: latestReadiness.runtime,
       active_model: latestReadiness.activeModel,
+      analysis_modes: latestReadiness.analysisModes,
+      specialists: latestReadiness.specialists,
     } : null,
     real_acceptance: {
       requested: realAcceptanceRequested,
@@ -247,12 +255,14 @@ function prepareAcceptanceExport(outcome) {
       task: elements.task_select.value,
       model: elements.model_select.value,
       use_specialist: elements.specialist_toggle.checked,
+      analysis_mode: elements.specialist_toggle.checked ? elements.specialist_mode_select.value : "vlm_only",
       image_bytes_embedded: false,
       query_text_embedded: false,
       registered_probe: selectedProbe,
     },
     outcome,
     result: latestResult,
+    evidence_presentation: latestEvidencePresentation,
     stale_result_protection: {
       displayed_evidence_count: elements.evidence_list.children.length,
       result_export_available: elements.download_json.hasAttribute("href"),
@@ -267,6 +277,7 @@ function prepareAcceptanceExport(outcome) {
 
 function clearDisplayedOutcome(reason = "等待当前请求返回新证据。") {
   latestResult = null;
+  latestEvidencePresentation = null;
   latestError = null;
   latestRealBinding = null;
   resetJsonExport();
@@ -274,6 +285,7 @@ function clearDisplayedOutcome(reason = "等待当前请求返回新证据。") 
   elements.warning_list.replaceChildren();
   elements.evidence_list.replaceChildren();
   elements.evidence_list.hidden = true;
+  resetEvidenceChain();
   elements.model_base.textContent = "—";
   elements.model_adapter.textContent = "等待结果";
   elements.latency_total.textContent = "—";
@@ -282,6 +294,74 @@ function clearDisplayedOutcome(reason = "等待当前请求返回新证据。") 
   elements.request_id.textContent = "等待 request_id";
   setState("idle", reason);
   drawBoxes([]);
+}
+
+function resetEvidenceChain() {
+  elements.evidence_chain.hidden = true;
+  elements.evidence_mode.textContent = "MODE UNREPORTED";
+  elements.localization_seal.dataset.state = "no_evidence";
+  elements.localization_seal.textContent = "NO LOCALIZATION EVIDENCE";
+  elements.specialist_source.textContent = "未返回 specialist";
+  elements.specialist_heatmap.textContent = "异常热力图未提供";
+  elements.vlm_explanation.textContent = "未返回独立 VLM 解释";
+  elements.fusion_card.dataset.state = "idle";
+  elements.fusion_status.textContent = "NOT APPLICABLE";
+  elements.fusion_reason.textContent = "当前结果未执行融合。";
+  elements.review_card.dataset.state = "clear";
+  elements.review_status.textContent = "无需额外复核";
+  elements.review_reasons.replaceChildren();
+  elements.localization_reason.textContent = "定位证据尚未通过真实性门禁。";
+  elements.heatmap_overlay.removeAttribute("src");
+  elements.heatmap_overlay.hidden = true;
+  elements.heatmap_legend.hidden = true;
+}
+
+function renderEvidenceChain(presentation) {
+  latestEvidencePresentation = presentation;
+  elements.evidence_chain.hidden = false;
+  elements.evidence_mode.textContent = presentation.modeLabel;
+  elements.localization_seal.dataset.state = presentation.localization.status;
+  elements.localization_seal.textContent = presentation.localization.verified
+    ? "REAL LOCALIZATION VERIFIED"
+    : presentation.localization.status === "no_evidence" ? "NO LOCALIZATION EVIDENCE" : "REAL LOCALIZATION BLOCKED";
+  elements.specialist_source.textContent = presentation.specialist.source
+    ? [
+      presentation.specialist.source,
+      presentation.specialist.revision ? `rev ${presentation.specialist.revision.slice(0, 12)}` : null,
+      `${presentation.specialist.objectCount} boxes`,
+      presentation.specialist.qualityStatus || null,
+    ].filter(Boolean).join(" · ")
+    : "未返回 specialist";
+  elements.specialist_heatmap.textContent = presentation.specialist.heatmapAvailable
+    ? `异常热力图已返回 · ${presentation.specialist.heatmapRegions.length} regions`
+    : "异常热力图未提供；不会从 VLM 框伪造。";
+  elements.vlm_explanation.textContent = presentation.vlmExplanation || "未返回独立 VLM 解释。";
+  elements.fusion_card.dataset.state = presentation.fusion.conflict
+    ? "conflict" : presentation.fusion.gatePassed ? "passed" : "idle";
+  elements.fusion_status.textContent = presentation.fusion.conflict
+    ? "MODEL CONFLICT" : String(presentation.fusion.status || "not applicable").toUpperCase();
+  elements.fusion_reason.textContent = presentation.fusion.reason
+    || (presentation.mode === "fused" ? "融合过程未返回解释。" : "当前结果未执行融合。");
+  elements.review_card.dataset.state = presentation.review.required ? "review" : "clear";
+  elements.review_status.textContent = presentation.review.required ? "必须人工复核" : "无需额外复核";
+  elements.review_reasons.replaceChildren(...presentation.review.reasons.map((reason) => {
+    const item = document.createElement("li");
+    item.textContent = reason;
+    return item;
+  }));
+  elements.localization_reason.textContent = presentation.localization.reason;
+  if (presentation.specialist.heatmapUrl) {
+    elements.heatmap_overlay.src = presentation.specialist.heatmapUrl;
+    elements.heatmap_overlay.hidden = false;
+    elements.heatmap_overlay.onerror = () => {
+      elements.heatmap_overlay.hidden = true;
+      elements.specialist_heatmap.textContent = "异常热力图 URI 已返回，但图像不可读或已过期。";
+    };
+  } else {
+    elements.heatmap_overlay.removeAttribute("src");
+    elements.heatmap_overlay.hidden = true;
+  }
+  elements.heatmap_legend.hidden = !presentation.specialist.heatmapAvailable;
 }
 
 async function selectFile(file, probe = null) {
@@ -385,7 +465,16 @@ function renderedImageRect() {
   return { x: image.left - stage.left, y: image.top - stage.top, width: image.width, height: image.height };
 }
 
-function drawBoxes(objects = []) {
+function sourceStyle(source) {
+  const normalized = String(source || "").toLowerCase();
+  if (normalized === "fusion") return { stroke: "#54d2a7", fill: "rgba(84,210,167,.10)", dash: [] };
+  if (/specialist|florence|rf[-_]detr|patchcore|anomaly/.test(normalized)) {
+    return { stroke: "#efb94f", fill: "rgba(239,185,79,.10)", dash: [] };
+  }
+  return { stroke: "#ff4d2d", fill: "rgba(255,77,45,.06)", dash: [7, 4] };
+}
+
+function drawBoxes(objects = [], presentation = latestEvidencePresentation) {
   const canvas = elements.overlay_canvas;
   const stage = elements.image_stage.getBoundingClientRect();
   const ratio = window.devicePixelRatio || 1;
@@ -394,26 +483,47 @@ function drawBoxes(objects = []) {
   const context = canvas.getContext("2d");
   context.scale(ratio, ratio);
   context.clearRect(0, 0, stage.width, stage.height);
-  if (!imageDimensions || !objects.length) return;
+  if (!imageDimensions) return;
   const rendered = renderedImageRect();
   const scaleX = rendered.width / imageDimensions.width;
   const scaleY = rendered.height / imageDimensions.height;
-  context.font = '700 12px "Noto Sans CJK SC", sans-serif';
-  context.lineWidth = 2;
+  for (const region of presentation?.specialist?.heatmapRegions || []) {
+    const [x1, y1, x2, y2] = region.bbox;
+    const x = rendered.x + x1 * scaleX;
+    const y = rendered.y + y1 * scaleY;
+    const width = (x2 - x1) * scaleX;
+    const height = (y2 - y1) * scaleY;
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+    const radius = Math.max(18, Math.max(width, height) * .66);
+    const gradient = context.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+    const strength = Number.isFinite(region.score) ? .14 + region.score * .24 : .24;
+    gradient.addColorStop(0, `rgba(255,77,45,${strength})`);
+    gradient.addColorStop(.5, `rgba(239,185,79,${strength * .65})`);
+    gradient.addColorStop(1, "rgba(26,199,182,0)");
+    context.fillStyle = gradient;
+    context.fillRect(x - radius * .25, y - radius * .25, width + radius * .5, height + radius * .5);
+  }
   for (const object of objects) {
     const [x1, y1, x2, y2] = object.bbox;
     const x = rendered.x + x1 * scaleX;
     const y = rendered.y + y1 * scaleY;
     const width = (x2 - x1) * scaleX;
     const height = (y2 - y1) * scaleY;
-    context.strokeStyle = "#ff4d2d";
-    context.fillStyle = "rgba(255, 77, 45, .08)";
+    const style = sourceStyle(object.source);
+    context.font = '700 12px "Noto Sans CJK SC", sans-serif';
+    context.lineWidth = presentation?.localization?.verified ? 3 : 2;
+    context.setLineDash(style.dash);
+    context.strokeStyle = style.stroke;
+    context.fillStyle = style.fill;
     context.fillRect(x, y, width, height);
     context.strokeRect(x, y, width, height);
-    const label = `${object.label}  ${(object.confidence * 100).toFixed(0)}% · ${object.source}`;
+    context.setLineDash([]);
+    const truthLabel = presentation?.localization?.verified ? "REAL" : "CANDIDATE";
+    const label = `${truthLabel} · ${object.label}  ${(object.confidence * 100).toFixed(0)}% · ${object.source}`;
     const labelWidth = Math.min(context.measureText(label).width + 16, rendered.width);
     const labelY = Math.max(rendered.y, y - 26);
-    context.fillStyle = "#ff4d2d";
+    context.fillStyle = style.stroke;
     context.fillRect(x, labelY, labelWidth, 24);
     context.fillStyle = "#fffdf5";
     context.fillText(label, x + 8, labelY + 16, labelWidth - 12);
@@ -427,9 +537,13 @@ function drawBoxes(objects = []) {
 }
 
 function renderResult(result, realBinding = null) {
-  latestResult = result;
+  const presentation = normalizeEvidencePresentation(result, {
+    realRuntime: Boolean(realBinding?.gate?.allowed),
+  });
+  latestResult = { ...result, evidence_presentation: presentation };
   latestError = null;
   latestRealBinding = realBinding;
+  renderEvidenceChain(presentation);
   setState(result.policy_state || result.result, result.reason);
   elements.warning_list.replaceChildren(...(result.warnings || []).map((warning) => {
     const item = document.createElement("p");
@@ -449,7 +563,8 @@ function renderResult(result, realBinding = null) {
     const bbox = document.createElement("code");
     bbox.textContent = `[${(object.bbox || []).join(", ")}]`;
     const source = document.createElement("small");
-    source.textContent = `来源 · ${object.source || "unknown"}`;
+    const sourceTruth = presentation.localization.verified ? "真实定位" : "候选证据";
+    source.textContent = `${sourceTruth} · 来源 ${object.source || "unknown"}`;
     item.append(label, confidence, bbox, source);
     return item;
   }));
@@ -459,10 +574,10 @@ function renderResult(result, realBinding = null) {
   elements.latency_total.textContent = `${result.latency_ms ?? "—"} ms`;
   const timing = result.timing || {};
   elements.latency_detail.textContent = `${timing.preprocess_ms ?? "—"} / ${timing.inference_ms ?? "—"} / ${timing.validation_ms ?? "—"} ms`;
-  elements.trace_source.textContent = result.trace?.source || "unknown";
+  elements.trace_source.textContent = `${presentation.modeLabel} · ${result.trace?.source || "unknown"}`;
   elements.request_id.textContent = result.request_id || "无 request_id";
-  prepareJsonExport(result);
-  drawBoxes(objects);
+  prepareJsonExport(latestResult);
+  drawBoxes(objects, presentation);
   prepareAcceptanceExport({
     kind: "success",
     request_id: result.request_id,
@@ -474,6 +589,7 @@ function renderResult(result, realBinding = null) {
 
 function renderError(error) {
   latestResult = null;
+  latestEvidencePresentation = null;
   latestRealBinding = null;
   resetJsonExport();
   const code = error.name === "AbortError"
@@ -492,6 +608,7 @@ function renderError(error) {
   elements.warning_list.replaceChildren();
   elements.evidence_list.replaceChildren();
   elements.evidence_list.hidden = true;
+  resetEvidenceChain();
   elements.trace_source.textContent = "error";
   elements.request_id.textContent = error.requestId || "无 request_id";
   drawBoxes([]);
@@ -521,6 +638,16 @@ async function analyze() {
     const requestReadiness = clientMode === "api"
       ? await refreshReadiness({ signal: controller.signal })
       : latestReadiness;
+    const requestedAnalysisMode = elements.specialist_toggle.checked
+      ? elements.specialist_mode_select.value : "vlm_only";
+    if (clientMode === "api"
+      && requestReadiness?.analysisModes?.[requestedAnalysisMode]?.runtime_ready === false) {
+      throw new AnalysisClientError(
+        "MODEL_NOT_READY",
+        `${requestedAnalysisMode} 运行链路未就绪；readiness 已阻止本次分析。`,
+        { status: 503, requestId: requestReadiness.requestId },
+      );
+    }
     const requestGate = realAcceptanceRequested
       ? requireRealAcceptance(requestReadiness, { clientMode })
       : null;
@@ -532,6 +659,7 @@ async function analyze() {
       task: elements.task_select.value,
       model: elements.model_select.value,
       useSpecialist: elements.specialist_toggle.checked,
+      analysisMode: requestedAnalysisMode,
     }, { signal: controller.signal });
     if (requestToken === requestSequence) renderResult(result, requestGate ? {
       gate: requestGate,
@@ -601,6 +729,12 @@ document.querySelectorAll(".scenario-chip").forEach((button) => button.addEventL
   elements.query_input.value = button.dataset.query;
 }));
 elements.analyze_button.addEventListener("click", analyze);
+elements.specialist_toggle.addEventListener("change", () => {
+  elements.specialist_mode_select.disabled = !elements.specialist_toggle.checked;
+  elements.specialist_mode_field.dataset.disabled = String(!elements.specialist_toggle.checked);
+});
+elements.specialist_mode_select.disabled = !elements.specialist_toggle.checked;
+elements.specialist_mode_field.dataset.disabled = String(!elements.specialist_toggle.checked);
 elements.clear_case.addEventListener("click", clearCase);
 elements.copy_json.addEventListener("click", copyJson);
 elements.real_acceptance_toggle.addEventListener("click", () => setRealAcceptanceRequested(!realAcceptanceRequested));
@@ -614,7 +748,7 @@ document.addEventListener("keydown", (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key === "Enter") analyze();
   if (event.key === "Escape" && isAnalyzing) controller?.abort();
 });
-new ResizeObserver(() => drawBoxes(latestResult?.objects || [])).observe(elements.image_stage);
+new ResizeObserver(() => drawBoxes(latestResult?.objects || [], latestEvidencePresentation)).observe(elements.image_stage);
 
 evaluationPanel = initializeEvaluationPanel({
   getReadiness: () => latestReadiness,

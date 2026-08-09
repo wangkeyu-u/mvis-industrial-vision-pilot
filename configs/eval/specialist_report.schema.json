@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mvis.local/schemas/specialist_report.schema.json",
+  "title": "Tiled Specialist Evaluation Report",
+  "type": "object",
+  "required": [
+    "pilot_only", "model_metrics", "heatmap_threshold", "min_component_area",
+    "sample_results", "metric_scope", "warning"
+  ],
+  "properties": {
+    "pilot_only": {"const": true},
+    "model_metrics": {
+      "type": "object",
+      "required": ["image", "pixel", "box"],
+      "properties": {
+        "image": {
+          "type": "object",
+          "required": ["f1", "auroc", "source_image_count", "positive_source_image_count", "threshold"],
+          "properties": {
+            "f1": {"type": "number", "minimum": 0, "maximum": 1},
+            "auroc": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+            "source_image_count": {"type": "integer", "minimum": 0},
+            "positive_source_image_count": {"type": "integer", "minimum": 0},
+            "threshold": {"type": "number"}
+          }
+        },
+        "pixel": {
+          "type": "object",
+          "required": ["precision", "recall", "f1", "iou"],
+          "properties": {
+            "precision": {"type": "number", "minimum": 0, "maximum": 1},
+            "recall": {"type": "number", "minimum": 0, "maximum": 1},
+            "f1": {"type": "number", "minimum": 0, "maximum": 1},
+            "iou": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        },
+        "box": {
+          "type": "object",
+          "required": ["precision", "recall", "f1", "acc_at_iou", "iou_threshold"],
+          "properties": {
+            "precision": {"type": "number", "minimum": 0, "maximum": 1},
+            "recall": {"type": "number", "minimum": 0, "maximum": 1},
+            "f1": {"type": "number", "minimum": 0, "maximum": 1},
+            "acc_at_iou": {"type": "number", "minimum": 0, "maximum": 1},
+            "iou_threshold": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        }
+      }
+    },
+    "heatmap_threshold": {"type": "number"},
+    "min_component_area": {"type": "integer", "minimum": 1},
+    "sample_results": {"type": "array"},
+    "metric_scope": {"type": "object"},
+    "warning": {"type": "string", "minLength": 1},
+    "split": {"enum": ["train", "validation", "test"]},
+    "prediction_count": {"type": "integer", "minimum": 0},
+    "fixture_or_mock": {"type": "boolean"}
+  }
+}

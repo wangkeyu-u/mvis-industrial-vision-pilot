@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "base_model_id": "Qwen/Qwen3-VL-2B-Instruct",
+  "method": "qlora",
+  "module_strategy": "language_only",
+  "rank": 4,
+  "alpha": 8,
+  "dropout": 0.05,
+  "seed": 20260808,
+  "batch_size": 1,
+  "gradient_accumulation_steps": 4,
+  "max_steps": 100,
+  "learning_rate": 0.0001,
+  "gradient_checkpointing": true,
+  "quantization_bits": 4,
+  "extra": {
+    "profile": "ksdd_phase7_tile_384_rank4",
+    "max_seq_length": 512,
+    "image_resize_size": 384,
+    "max_output_tokens": 128,
+    "memory_limit_mb": 12288,
+    "max_wall_minutes": 60,
+    "train_on_completions": true,
+    "vision_encoder_frozen": true,
+    "dataset_contract_transform": "model_adapter_refusal_code_v1"
+  }
+}

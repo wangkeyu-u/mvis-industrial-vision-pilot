@@ -194,6 +194,47 @@ export MVIS_CORS_ORIGINS=http://127.0.0.1:8000,http://localhost:8000
 
 服务本身不会打开模型下载。当前登记配置要求本地 MLX checkpoint；缺少 `mlx`/`mlx-vlm`、本地权重、适配器或加载条件时只返回安全原因码，不通过健康 API 暴露本地绝对路径或底层异常正文。
 
+## Phase 7 specialist 与审慎融合
+
+`MVIS_ANALYSIS_MODE` 和每次 `/v1/analyze` 请求的 `analysis_mode` 只允许三种明确值：
+
+- `vlm_only`：只调用 VLM；`use_specialist` 仅保留为旧 adapter hint，不会暗中切换编排模式。
+- `specialist_only`：返回 anomaly score、threshold、source、specialist-owned bbox 和可选热力图 artifact。
+- `fused`：并行调用 VLM 和 specialist。一致时仍以 specialist bbox 为最终定位；结论或几何冲突时标记 `uncertain` 和 `human_review_required=true`，保留 specialist 证据并丢弃 VLM 框。
+
+热力图只能作为经单帧 PNG、像素数和字节数验证后的短期内存 artifact 返回；API 只暴露高熵 ID 和 `/v1/artifacts/heatmaps/{id}`，不暴露 adapter 本地路径，响应强制 `no-store` 和 `nosniff`。
+
+真实 specialist 不会自动扫描 `artifacts/`，必须显式指定 manifest：
+
+```bash
+export MVIS_MODEL_MODE=real
+export MVIS_ANALYSIS_MODE=fused
+export MVIS_SPECIALIST_MANIFEST=artifacts/model/phase7/patchcore_resnet18/run_manifest.json
+export MVIS_SPECIALIST_QUALITY_STATUS=pilot_failed
+uv run python -m src.api preflight
+uv run python -m src.api serve --host 127.0.0.1 --port 8001
+```
+
+当 bridge、checkpoint、hash 或运行依赖不就绪时，`specialist_only`/`fused` 的 readiness 为 false，且不会用 Mock specialist 代替。当前 PatchCore pilot 评测为 Macro-F1 0.78125，但定位 Acc@IoU 为 0/9，因此必须标记质量未通过，不得作为 production 自动决策。
+
+严格的 Uvicorn 30 请求验收不允许 Mock 替代，会输出 P50/P95、进程历史峰值内存、受控超时和恢复结果：
+
+```bash
+docs/deployment/mvis.sh release-validate fused \
+  data/processed/ksdd_v0/images/kos10/Part0.jpg
+```
+
+输出为 `docs/deployment/phase7_release_report.json` 和 `phase7_release_report.md`。运行验收和质量接受始终分离；没有精确 provenance 绑定的签名 evaluator attestation，即使 pilot 运行通过，`production_release_status` 也仍为 `blocked`。
+
+本轮实际样本命令为：
+
+```bash
+docs/deployment/mvis.sh release-validate fused \
+  data/processed/ksdd_v0/images/kos10/Part0.jpg
+```
+
+主 30 请求报告在没有 ready `previous` 时明确把回滚记为 blocked。另一个隔离的真实 registry 探针加载本地 QLoRA pilot、激活后实际回滚到 zero-shot，并验证回滚后 HTTP 恢复；证据见 `phase7_real_rollback_probe.json` 与 `phase7_real_rollback_probe.md`。该证据只证明 lifecycle/恢复，不改变 QLoRA 的失败质量结论。
+
 ## 前端开发 URL 与 CORS
 
 先在 8000 端口启动现有 UI，再在 8001 端口启动本服务。前端可直接访问：

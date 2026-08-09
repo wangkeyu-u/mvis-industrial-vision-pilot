@@ -125,6 +125,14 @@
           <span class="toggle" aria-hidden="true"></span>
         </label>
 
+        <label id="specialist-mode-field" class="specialist-mode-field" for="specialist-mode-select">
+          <span>协同模式</span>
+          <select id="specialist-mode-select">
+            <option value="fused">fused · VLM 结论 + specialist 定位</option>
+            <option value="specialist_only">specialist_only · 仅异常检测</option>
+          </select>
+        </label>
+
         <div id="form-alert" class="form-alert" role="alert" hidden></div>
         <button id="analyze-button" class="primary-action" type="button">
           <span>开始审查</span>
@@ -148,7 +156,12 @@
             <p>上传图片后，此处将按原图坐标叠加证据框</p>
           </div>
           <img id="preview-image" alt="待审查的上传图片" hidden />
+          <img id="heatmap-overlay" class="heatmap-overlay" alt="专用模型异常热力图" hidden />
           <canvas id="overlay-canvas" aria-label="边界框叠加层"></canvas>
+          <div id="heatmap-legend" class="heatmap-legend" hidden>
+            <span aria-hidden="true"></span>
+            <b>ANOMALY HEATMAP</b>
+          </div>
           <div id="stage-loader" class="stage-loader" hidden aria-live="polite">
             <span class="scan-line" aria-hidden="true"></span>
             <strong>正在校验证据链</strong>
@@ -166,6 +179,42 @@
         </article>
 
         <div id="evidence-list" class="evidence-list" aria-label="检测证据与置信度" hidden></div>
+
+        <section id="evidence-chain" class="evidence-chain" aria-labelledby="evidence-chain-heading" hidden>
+          <header class="evidence-chain-head">
+            <div>
+              <p class="eyebrow">EVIDENCE COLLABORATION</p>
+              <h3 id="evidence-chain-heading">模型协作证据链</h3>
+            </div>
+            <div class="evidence-chain-status">
+              <span id="evidence-mode" class="evidence-mode">MODE UNREPORTED</span>
+              <span id="localization-seal" class="localization-seal" data-state="blocked">REAL LOCALIZATION BLOCKED</span>
+            </div>
+          </header>
+          <div class="evidence-chain-grid">
+            <article>
+              <span class="evidence-channel-index">01 / SPECIALIST</span>
+              <strong id="specialist-source">未返回 specialist</strong>
+              <p id="specialist-heatmap">异常热力图未提供</p>
+            </article>
+            <article>
+              <span class="evidence-channel-index">02 / VLM</span>
+              <strong>语义解释</strong>
+              <p id="vlm-explanation">未返回独立 VLM 解释</p>
+            </article>
+            <article id="fusion-card" data-state="idle">
+              <span class="evidence-channel-index">03 / FUSION</span>
+              <strong id="fusion-status">NOT APPLICABLE</strong>
+              <p id="fusion-reason">当前结果未执行融合。</p>
+            </article>
+            <article id="review-card" data-state="clear">
+              <span class="evidence-channel-index">04 / HUMAN REVIEW</span>
+              <strong id="review-status">无需额外复核</strong>
+              <ul id="review-reasons"></ul>
+            </article>
+          </div>
+          <p id="localization-reason" class="localization-reason">定位证据尚未通过真实性门禁。</p>
+        </section>
 
         <div class="telemetry-grid">
           <article>
@@ -229,9 +278,9 @@
       <section class="phase6-workbench" aria-labelledby="phase6-heading">
         <header class="phase6-heading-row">
           <div>
-            <p class="eyebrow">PHASE 6 / CONTROLLED COMPARISON</p>
-            <h3 id="phase6-heading">真实零样本 × LoRA Pilot</h3>
-            <p>双包分别验签；数据 manifest、sample IDs、prompt 与基础 revision 完全一致后才开放指标对比。</p>
+            <p class="eyebrow">PHASE 7 / CONTROLLED COMPARISON</p>
+            <h3 id="phase6-heading">真实 VLM 零样本 × 定位候选 Pilot</h3>
+            <p>双包分别验签；相同 KSDD manifest 与 sample IDs 是硬门槛，LoRA/fused 另校验 prompt、基础 revision 与 adapter。</p>
           </div>
           <div class="phase6-state-rail" aria-label="运行与质量状态">
             <span id="phase6-runtime-state" class="phase6-state" data-state="runtime_unknown">RUNTIME_UNKNOWN</span>
@@ -251,10 +300,10 @@
           <div class="phase6-link" aria-hidden="true"><span></span><b>PAIR</b><span></span></div>
           <article id="phase6-candidate-slot" class="phase6-package-slot" data-state="empty">
             <input id="phase6-candidate-input" type="file" accept="application/json,.json" multiple hidden />
-            <div class="phase6-slot-index">B / LORA</div>
-            <strong>LoRA Pilot 证据包</strong>
-            <p id="phase6-candidate-detail">等待 adapter hash 与评测组件</p>
-            <button id="select-phase6-candidate" class="lab-action" type="button">导入 LoRA 包</button>
+            <div class="phase6-slot-index">B / CANDIDATE</div>
+            <strong>Specialist / LoRA Pilot 证据包</strong>
+            <p id="phase6-candidate-detail">等待 specialist 身份或 adapter hash</p>
+            <button id="select-phase6-candidate" class="lab-action" type="button">导入候选包</button>
           </article>
         </div>
 

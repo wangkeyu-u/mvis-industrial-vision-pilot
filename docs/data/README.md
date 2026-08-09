@@ -21,6 +21,7 @@ JSON Schema 位于 `configs/data/sample.schema.json` 和 `configs/data/manifest.
 - 批量评测：`evaluate_offline_records(records)` 输出逐样本结果、五项指标、切片指标和失败案例；机器报告契约位于 `configs/eval/report.schema.json`。
 - KSDD V0：`prepare_ksdd_dataset(...)` 将官方精细标注发布转换为实体/近重复隔离的冻结 pilot；命令行入口为 `python -m src.data.ksdd_cli`。真实数据证据、许可和限制见 [phase5_dataset_report.md](phase5_dataset_report.md)。
 - KSDD SFT V1：`export_ksdd_sft(...)` 从 V0 冻结 split 导出 MLX-VLM `images/messages` 格式的 train/valid/test JSONL；命令行入口为 `python -m src.data.ksdd_sft_cli`。固定 prompt、严格 JSON 答案、公平 zero-shot/LoRA 编排与 pilot 限制见 [phase6_sft_dataset_report.md](phase6_sft_dataset_report.md)。
+- KSDD Tiled Specialist V1：`export_ksdd_tiles(...)` 继承 V0 实体 split，导出 256/384 px MLX-VLM 和 Anomalib 数据；`evaluate_specialist_tiles(...)` 适配热力图、bbox 回映及图像/像素/框指标。详见 [phase7_tiled_specialist_dataset_report.md](phase7_tiled_specialist_dataset_report.md)。
 
 这些门面仅接收标准 Python 对象或本地文件，不依赖模型、API 或网络数据。
 

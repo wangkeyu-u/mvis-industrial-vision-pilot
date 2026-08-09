@@ -243,7 +243,7 @@ function normalizeRunEvidence(bundle, report) {
     run_manifest: bundle.run_manifest,
     experiment: bundle.experiment,
     performance: bundle.performance,
-    sample_predictions: report?.samples?.map((sample) => sample?.prediction?.provenance).filter(Boolean),
+    sample_predictions: report?.samples?.map((sample) => sample?.prediction).filter(Boolean),
   };
   const directRevision = [
     bundle.config?.model_revision,
@@ -253,6 +253,8 @@ function normalizeRunEvidence(bundle, report) {
     bundle.config?.model?.revision,
     bundle.config?.run?.base_model_revision,
     bundle.run_manifest?.model?.revision,
+    bundle.run_manifest?.artifacts?.checkpoint_sha256,
+    bundle.run_manifest?.configuration?.backbone_revision,
   ].map(evidenceValue).find((value) => typeof value === "string" && value.trim()) || null;
   const directAdapterHash = [
     bundle.config?.adapter_hash,
@@ -262,13 +264,39 @@ function normalizeRunEvidence(bundle, report) {
     bundle.run_manifest?.model?.adapter_hash,
     bundle.run_manifest?.model?.adapter_sha256,
   ].map(evidenceValue).find((value) => typeof value === "string" && value.trim()) || null;
+  const modelId = uniqueTextIdentity(searchable, ["base_model_id"], "base model id")
+    || uniqueTextIdentity(searchable, ["model_id"], "model id");
+  const adapterHash = uniqueTextIdentity(searchable, ["adapter_hash", "adapter_sha256", "adapter_fingerprint"], "adapter hash")
+    || (typeof directAdapterHash === "string" ? directAdapterHash.trim() : null);
+  const declaredKind = textIdentity([
+    bundle.config?.candidate_kind,
+    bundle.config?.experiment_kind,
+    bundle.config?.run?.candidate_kind,
+    bundle.config?.run?.kind,
+    bundle.experiment?.kind,
+    bundle.run_manifest?.candidate_kind,
+    bundle.run_manifest?.experiment_kind,
+    bundle.run_manifest?.run_kind,
+    bundle.run_manifest?.configuration?.algorithm,
+    bundle.run_manifest?.implementation?.algorithm,
+    report?.samples?.[0]?.prediction?.model_id,
+  ]);
+  const candidateKind = /specialist|detector|anomaly|patchcore/.test(declaredKind || "") ? "specialist"
+    : /fusion|fused|hybrid/.test(declaredKind || "") ? "fused"
+    : /lora|qlora|adapter/.test(declaredKind || "") || adapterHash ? "lora"
+    : /zero.?shot|baseline/.test(declaredKind || "") ? "zero_shot" : "unknown";
+  const specialistIdentity = uniqueTextIdentity(
+    searchable,
+    ["specialist_model_id", "specialist_id", "detector_id", "anomaly_model_id"],
+    "specialist identity",
+  ) || (candidateKind === "specialist" ? modelId : null);
   return {
-    modelId: uniqueTextIdentity(searchable, ["base_model_id"], "base model id")
-      || uniqueTextIdentity(searchable, ["model_id"], "model id"),
+    modelId,
     modelRevision: uniqueTextIdentity(searchable, ["model_revision", "base_model_revision", "checkpoint_revision"], "model revision")
       || (typeof directRevision === "string" ? directRevision.trim() : null),
-    adapterHash: uniqueTextIdentity(searchable, ["adapter_hash", "adapter_sha256", "adapter_fingerprint"], "adapter hash")
-      || (typeof directAdapterHash === "string" ? directAdapterHash.trim() : null),
+    adapterHash,
+    candidateKind,
+    specialistIdentity,
     promptIdentity: prompt.identity,
     promptDisplay: prompt.display,
     runId: uniqueTextIdentity(searchable, ["run_id"], "run id")
@@ -282,6 +310,10 @@ function normalizeRunEvidence(bundle, report) {
       mlxPeakAllocatedMb: firstNumber(searchable, ["mlx_peak_allocated_mb"]),
     },
   };
+}
+
+function textIdentity(values) {
+  return values.find((value) => typeof value === "string" && value.trim())?.trim().toLowerCase() || null;
 }
 
 function buildPortfolio(bundle, { sourceName = "evaluation.json", verified = false, kind = "package" } = {}) {
@@ -419,13 +451,12 @@ export function compareEvaluationPortfolios(baseline, candidate) {
   if (!baseline || !candidate) {
     reasons.push({ code: "PAIR_INCOMPLETE", message: "请分别导入零样本和 LoRA 的完整评测包。" });
   } else {
-    for (const [role, portfolio] of [["ZERO_SHOT", baseline], ["LORA", candidate]]) {
+    for (const [role, portfolio] of [["ZERO_SHOT", baseline], ["CANDIDATE", candidate]]) {
       if (!portfolio.verified) reasons.push({ code: `${role}_PACKAGE_UNVERIFIED`, message: `${role} package 未通过组件 SHA-256。` });
       if (portfolio.fixtureOnly || portfolio.mockOnly) reasons.push({ code: `${role}_NOT_REAL`, message: `${role} package 是 fixture/mock。` });
       if (!portfolio.pilotOnly) reasons.push({ code: `${role}_NOT_PILOT`, message: `${role} package 未声明 pilot_only。` });
       if (!portfolio.dataManifestSha256) reasons.push({ code: `${role}_MANIFEST_MISSING`, message: `${role} package 未记录数据 manifest SHA-256。` });
       if (!portfolio.sampleIds.length) reasons.push({ code: `${role}_SAMPLE_IDS_MISSING`, message: `${role} report 未记录逐样本 ID。` });
-      if (!portfolio.promptIdentity) reasons.push({ code: `${role}_PROMPT_MISSING`, message: `${role} package 未记录 prompt 身份。` });
       if (!portfolio.modelRevision) reasons.push({ code: `${role}_REVISION_MISSING`, message: `${role} package 未记录基础模型 revision。` });
     }
     if (baseline.dataManifestSha256 && candidate.dataManifestSha256
@@ -437,14 +468,26 @@ export function compareEvaluationPortfolios(baseline, candidate) {
       const right = candidate.sampleIds.join("\n");
       if (left !== right) reasons.push({ code: "SAMPLE_ID_MISMATCH", message: "零样本与 LoRA 的 sample ID 集合不一致，已阻止对比。" });
     }
-    if (baseline.promptIdentity && candidate.promptIdentity && baseline.promptIdentity !== candidate.promptIdentity) {
-      reasons.push({ code: "PROMPT_MISMATCH", message: "零样本与 LoRA 的 prompt 不一致，不能归因于 adapter。" });
+    const candidateUsesVlmBase = candidate.candidateKind !== "specialist";
+    if (candidateUsesVlmBase && !baseline.promptIdentity) {
+      reasons.push({ code: "ZERO_SHOT_PROMPT_MISSING", message: "零样本 package 未记录 prompt 身份。" });
     }
-    if (baseline.modelRevision && candidate.modelRevision && baseline.modelRevision !== candidate.modelRevision) {
-      reasons.push({ code: "MODEL_REVISION_MISMATCH", message: "零样本与 LoRA 的基础模型 revision 不一致。" });
+    if (candidateUsesVlmBase && !candidate.promptIdentity) {
+      reasons.push({ code: "CANDIDATE_PROMPT_MISSING", message: "LoRA/fused candidate 未记录 prompt 身份。" });
+    } else if (candidateUsesVlmBase && baseline.promptIdentity && candidate.promptIdentity
+      && baseline.promptIdentity !== candidate.promptIdentity) {
+      reasons.push({ code: "PROMPT_MISMATCH", message: "零样本与 LoRA/fused candidate 的 prompt 不一致。" });
+    }
+    if (candidateUsesVlmBase && baseline.modelRevision && candidate.modelRevision
+      && baseline.modelRevision !== candidate.modelRevision) {
+      reasons.push({ code: "MODEL_REVISION_MISMATCH", message: "零样本与 LoRA/fused candidate 的基础模型 revision 不一致。" });
     }
     if (baseline.adapterHash) reasons.push({ code: "ZERO_SHOT_ADAPTER_PRESENT", message: "零样本包不应包含 adapter hash。" });
-    if (!candidate.adapterHash) reasons.push({ code: "LORA_ADAPTER_HASH_MISSING", message: "LoRA package 未记录 adapter hash。" });
+    if (candidate.candidateKind === "specialist") {
+      if (!candidate.specialistIdentity) reasons.push({ code: "SPECIALIST_IDENTITY_MISSING", message: "specialist package 未记录模型身份。" });
+    } else if (!candidate.adapterHash) {
+      reasons.push({ code: "CANDIDATE_IDENTITY_MISSING", message: "LoRA/fused candidate 未记录 adapter hash。" });
+    }
   }
   const allowed = reasons.length === 0;
   const metrics = allowed ? evaluationMetricDefinitions.map((definition) => {

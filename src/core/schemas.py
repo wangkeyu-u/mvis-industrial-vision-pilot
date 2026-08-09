@@ -17,11 +17,19 @@ class AnalyzeTask(StrEnum):
     VQA = "vqa"
 
 
+class AnalysisMode(StrEnum):
+    VLM_ONLY = "vlm_only"
+    SPECIALIST_ONLY = "specialist_only"
+    FUSED = "fused"
+
+
 class ObjectSource(StrEnum):
     VLM = "vlm"
     RF_DETR = "rf-detr"
     FLORENCE = "florence"
     FUSION = "fusion"
+    EFFICIENT_AD = "efficientad"
+    PATCHCORE = "patchcore"
     MOCK = "mock"
 
 
@@ -51,6 +59,7 @@ class Base64AnalyzeRequest(BaseModel):
     task: AnalyzeTask = AnalyzeTask.INSPECT
     model: str = Field(default="active", min_length=1, max_length=128)
     use_specialist: bool = False
+    analysis_mode: AnalysisMode | None = None
     options: AnalyzeOptions = Field(default_factory=AnalyzeOptions)
 
     @field_validator("query")
@@ -118,6 +127,57 @@ class ModelOutput(BaseModel):
         return self
 
 
+class SpecialistOutput(BaseModel):
+    """Internal provider-neutral specialist result; raw heatmap bytes are never serialized."""
+
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+
+    score: float = Field(ge=0.0)
+    threshold: float = Field(ge=0.0)
+    source: ObjectSource
+    objects: list[EvidenceObject] = Field(default_factory=list)
+    heatmap_png: bytes | None = Field(default=None, exclude=True, repr=False)
+    warnings: list[str] = Field(default_factory=list, max_length=32)
+
+    @property
+    def detected(self) -> bool:
+        return self.score >= self.threshold
+
+    @model_validator(mode="after")
+    def validate_specialist_evidence(self) -> SpecialistOutput:
+        if self.source in {ObjectSource.VLM, ObjectSource.FUSION}:
+            raise ValueError("specialist source must identify a specialist implementation")
+        if self.detected and not self.objects:
+            raise ValueError("positive specialist score requires localized evidence")
+        if not self.detected and self.objects:
+            raise ValueError("negative specialist score cannot contain localized evidence")
+        return self
+
+
+class HeatmapArtifact(BaseModel):
+    artifact_id: str = Field(pattern=r"^hm_[0-9a-f]{32}$")
+    uri: str = Field(pattern=r"^/v1/artifacts/heatmaps/hm_[0-9a-f]{32}$")
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    media_type: Literal["image/png"] = "image/png"
+    width: int = Field(gt=0)
+    height: int = Field(gt=0)
+    expires_in_seconds: int = Field(gt=0)
+
+
+class SpecialistEvidence(BaseModel):
+    specialist_id: str
+    revision: str
+    score: float = Field(ge=0.0)
+    threshold: float = Field(ge=0.0)
+    detected: bool
+    source: ObjectSource
+    objects: list[EvidenceObject]
+    heatmap: HeatmapArtifact | None = None
+    provenance: ModelProvenance
+    quality_status: QualityStatus
+    quality_accepted: bool
+
+
 class ModelIdentity(BaseModel):
     base: str
     adapter: str | None = None
@@ -174,11 +234,14 @@ class LatencyBreakdown(BaseModel):
 class AnalyzeResponse(BaseModel):
     schema_version: str = SCHEMA_VERSION
     request_id: str
+    analysis_mode: AnalysisMode
     model: ModelIdentity
     provenance: ModelProvenance
     quality_status: QualityStatus
     quality_accepted: bool
     serving_tier: ServingTier
+    specialist: SpecialistEvidence | None = None
+    human_review_required: bool = False
     result: str
     objects: list[EvidenceObject]
     reason: str

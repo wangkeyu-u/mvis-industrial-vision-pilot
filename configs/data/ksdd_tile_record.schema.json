@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mvis.local/schemas/ksdd_tile_record.schema.json",
+  "title": "KSDD Tiled Specialist Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tile_id", "source_sample_id", "entity_id", "split", "tile_size", "label",
+    "negative_source", "image", "mask", "bbox_tile", "bbox_original", "transform",
+    "source_image_sha256", "tile_image_sha256", "tile_mask_sha256"
+  ],
+  "properties": {
+    "tile_id": {"type": "string", "minLength": 1},
+    "source_sample_id": {"type": "string", "minLength": 1},
+    "entity_id": {"type": "string", "minLength": 1},
+    "split": {"enum": ["train", "validation", "test"]},
+    "tile_size": {"type": "integer", "minimum": 1},
+    "label": {"enum": ["good", "defect"]},
+    "negative_source": {
+      "type": ["string", "null"],
+      "enum": [null, "same_image_nondefect_region", "normal_image"]
+    },
+    "image": {"type": "string", "pattern": "^tiles/[0-9]+/images/.+\\.png$"},
+    "mask": {"type": ["string", "null"]},
+    "bbox_tile": {"$ref": "#/$defs/nullable_bbox"},
+    "bbox_original": {"$ref": "#/$defs/nullable_bbox"},
+    "transform": {"$ref": "#/$defs/transform"},
+    "source_image_sha256": {"$ref": "#/$defs/sha256"},
+    "tile_image_sha256": {"$ref": "#/$defs/sha256"},
+    "tile_mask_sha256": {
+      "anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"label": {"const": "good"}}},
+      "then": {
+        "properties": {
+          "mask": {"type": "null"},
+          "bbox_tile": {"type": "null"},
+          "bbox_original": {"type": "null"},
+          "tile_mask_sha256": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"label": {"const": "defect"}}},
+      "then": {
+        "properties": {
+          "negative_source": {"type": "null"},
+          "mask": {"type": "string"},
+          "bbox_tile": {"$ref": "#/$defs/bbox"},
+          "bbox_original": {"$ref": "#/$defs/bbox"},
+          "tile_mask_sha256": {"$ref": "#/$defs/sha256"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "bbox": {
+      "type": "array", "prefixItems": [
+        {"type": "integer", "minimum": 0}, {"type": "integer", "minimum": 0},
+        {"type": "integer", "minimum": 1}, {"type": "integer", "minimum": 1}
+      ], "minItems": 4, "maxItems": 4
+    },
+    "nullable_bbox": {"anyOf": [{"$ref": "#/$defs/bbox"}, {"type": "null"}]},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "transform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type", "offset_x", "offset_y", "tile_width", "tile_height",
+        "original_width", "original_height", "tile_xyxy_in_original", "tile_to_original"
+      ],
+      "properties": {
+        "type": {"const": "translation"},
+        "offset_x": {"type": "integer", "minimum": 0},
+        "offset_y": {"type": "integer", "minimum": 0},
+        "tile_width": {"type": "integer", "minimum": 1},
+        "tile_height": {"type": "integer", "minimum": 1},
+        "original_width": {"type": "integer", "minimum": 1},
+        "original_height": {"type": "integer", "minimum": 1},
+        "tile_xyxy_in_original": {"$ref": "#/$defs/bbox"},
+        "tile_to_original": {
+          "type": "object", "additionalProperties": false,
+          "required": ["x", "y"],
+          "properties": {"x": {"type": "string"}, "y": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

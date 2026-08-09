@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mvis.local/schemas/specialist_prediction.schema.json",
+  "title": "Tiled Specialist Prediction",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tile_id", "source_sample_id", "image_score", "anomaly_map"],
+  "properties": {
+    "tile_id": {"type": "string", "minLength": 1},
+    "source_sample_id": {"type": "string", "minLength": 1},
+    "image_score": {"type": "number"},
+    "anomaly_map": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "array", "minItems": 1, "items": {"type": "number"}}
+    },
+    "pred_boxes": {
+      "type": "array",
+      "items": {
+        "type": "array", "minItems": 4, "maxItems": 4,
+        "items": {"type": "number"}
+      }
+    }
+  }
+}

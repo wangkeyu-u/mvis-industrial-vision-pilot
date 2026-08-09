@@ -1,0 +1,18 @@
+{
+  "dataset_version": "ksdd_tiled-1.0.0",
+  "created_at": "2026-08-09T08:30:00+08:00",
+  "manifest": "data/processed/ksdd_tiled_v1/tile_manifest.json",
+  "manifest_sha256": "7fed681c0a6fef824bf8dbd53948e12d43733cf84088e3fbb21fae3208cb76c5",
+  "tile_records_sha256": "9a1f6096ba0e9409d7120f0b018b633eca63aab37bf0dd83702b1491808e6dc6",
+  "leakage_report_sha256": "bf765f8eafcfa019bfa40d7aae188737aa57aa38294095b4ad0a8688fcd5ce28",
+  "data_card_sha256": "41043c5b8502f10e17fe67e6fd99dbe3a6c93e68f6331558c5d74c8af9fc6c7b",
+  "source_dataset_version": "ksdd-0.1.0",
+  "source_manifest_sha256": "fe9983728d7aa830f11a1369ff1a4eb353be8e8403685a1cf45ea23db128085a",
+  "tile_sizes": [256, 384],
+  "total_tiles": 901,
+  "positive_tiles": 135,
+  "negative_tiles": 766,
+  "source_test_positive_images": 9,
+  "pilot_only": true,
+  "model_run": false
+}

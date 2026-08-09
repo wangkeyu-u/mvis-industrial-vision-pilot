@@ -35,6 +35,20 @@ from .ksdd_sft import (
     prompt_variant_for,
     validate_sft_record,
 )
+from .ksdd_tiles import (
+    DEFAULT_DATASET_VERSION as KSDD_TILED_DATASET_VERSION,
+)
+from .ksdd_tiles import (
+    DEFAULT_PROMPT_VERSION as KSDD_TILE_PROMPT_VERSION,
+)
+from .ksdd_tiles import (
+    DEFAULT_TILE_SIZES,
+    KSDDTileExportResult,
+    TileRecord,
+    TileTransform,
+    export_ksdd_tiles,
+    load_tile_records,
+)
 from .leakage import DuplicateLeak, LeakageReport, detect_split_leakage
 from .license_policy import LicenseDecision, LicensePolicy, require_allowed_license
 from .manifest import DatasetManifest, ManifestEntry, build_manifest
@@ -73,12 +87,18 @@ __all__ = [
     "KSDDSFTExportResult",
     "KSDD_SFT_DATASET_VERSION",
     "KSDD_SFT_PROMPT_VERSION",
+    "KSDD_TILED_DATASET_VERSION",
+    "KSDD_TILE_PROMPT_VERSION",
+    "KSDDTileExportResult",
     "LeakageReport",
     "ManifestEntry",
     "ObjectAnnotation",
     "SampleResponse",
     "SchemaError",
     "SplitRatios",
+    "TileRecord",
+    "TileTransform",
+    "DEFAULT_TILE_SIZES",
     "cross_split_leakage_rate",
     "build_manifest",
     "build_sft_answer",
@@ -87,12 +107,14 @@ __all__ = [
     "compute_dataset_statistics",
     "entity_isolated_split",
     "export_ksdd_sft",
+    "export_ksdd_tiles",
     "discover_ksdd",
     "find_near_duplicate_groups",
     "hamming_distance",
     "generate_data_card",
     "load_samples_jsonl",
     "load_sft_jsonl",
+    "load_tile_records",
     "mask_bounding_box",
     "perceptual_hash",
     "prepare_dataset",

@@ -18,6 +18,11 @@ inference:
   concurrency_wait_seconds: 0.1
   disconnect_poll_seconds: 0.05
 
+fusion:
+  # Compatibility-safe default; clients must explicitly request specialist_only/fused.
+  default_mode: vlm_only
+  iou_threshold: 0.5
+
 model:
   # auto: prefer the real MLX bridge and expose an explicit degraded Mock fallback.
   # real: never fall back; readiness remains false if runtime/weights cannot load.
@@ -29,15 +34,31 @@ model:
   weight_hash: 4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb
   data_version: ksdd-0.1.0
   prompt_version: ksdd_prompt_v1
+  active_alias: zero_shot
   zero_shot_quality_status: pilot_failed
   # The LoRA path remains null until the algorithm thread emits a local artifact.
   # Override with MVIS_LORA_ADAPTER_PATH; no download is attempted.
   lora_model_id: qwen3-vl-2b-instruct-4bit-lora-r8
   lora_adapter_path: null
+  lora_run_manifest_path: null
   lora_data_version: ksdd_sft-1.0.0
   lora_load_on_start: true
   # MVIS_EVALUATOR_ATTESTATION and MVIS_EVALUATOR_SIGNING_KEY are environment-only.
   # MVIS_MODELOPS_TOKEN is deliberately environment-only and never read here.
+
+specialist:
+  id: industrial-anomaly-specialist
+  # Set MVIS_SPECIALIST_MANIFEST after the algorithm thread publishes a final artifact.
+  manifest_path: null
+  # Frozen pilot: macro-F1 0.78125, localization Acc@IoU 0/9; not accepted.
+  quality_status: pilot_failed
+  data_version: ksdd-0.1.0
+  prompt_version: not-applicable
+  # Heatmaps are bounded, memory-only, short-lived PNG artifacts; no local path is exposed.
+  heatmap_max_items: 32
+  heatmap_max_bytes: 4194304
+  heatmap_ttl_seconds: 300
+  heatmap_max_pixels: 4194304
 
 cors:
   # Local UI development only. Production should use same-origin or an explicit list.

@@ -94,10 +94,14 @@ def test_settings_environment_selects_model_and_cors(monkeypatch, tmp_path) -> N
     monkeypatch.setenv("MVIS_MODEL_MODE", "real")
     monkeypatch.setenv("MVIS_MODEL_CONFIG", "configs/models/custom.json")
     monkeypatch.setenv("MVIS_CORS_ORIGINS", "http://127.0.0.1:8000,http://localhost:5173")
+    monkeypatch.setenv("MVIS_ACTIVE_MODEL_ALIAS", "lora")
+    monkeypatch.setenv("MVIS_ANALYSIS_MODE", "fused")
 
     settings = ServiceSettings.load(tmp_path / "missing.yaml")
     assert settings.model_mode == "real"
     assert settings.model_config_path == "configs/models/custom.json"
+    assert settings.active_model_alias == "lora"
+    assert settings.default_analysis_mode == "fused"
     assert settings.cors_allowed_origins == (
         "http://127.0.0.1:8000",
         "http://localhost:5173",

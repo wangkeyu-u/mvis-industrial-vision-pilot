@@ -10,7 +10,7 @@ from typing import Any
 
 from src.core.config import ServiceSettings
 from src.core.model_registry import ModelRegistry
-from src.core.schemas import SCHEMA_VERSION
+from src.core.schemas import SCHEMA_VERSION, AnalysisMode
 from src.observability.resources import peak_memory_mb
 
 
@@ -86,13 +86,20 @@ def run_preflight(
     )
 
     runtime = registry.runtime_status()
-    model_ready = registry.ready()
+    analysis_mode = AnalysisMode(settings.default_analysis_mode)
+    model_ready = registry.mode_runtime_ready(analysis_mode)
     model_check = _check(
         "model_readiness",
         model_ready,
         required=True,
         runtime=runtime,
+        analysis_mode=analysis_mode.value,
         active_model=(registry.active().public_status() if registry.active() is not None else None),
+        active_specialist=(
+            registry.specialist_active().public_status()
+            if registry.specialist_active() is not None
+            else None
+        ),
     )
     if model_ready and runtime["degraded"]:
         model_check["status"] = "degraded"
@@ -101,7 +108,7 @@ def run_preflight(
     active = registry.active()
     quality_check = _check(
         "quality_acceptance",
-        registry.production_ready(),
+        registry.production_ready(analysis_mode),
         required=False,
         runtime_ready=model_ready,
         quality_status=(active.quality_status.value if active else None),
@@ -109,7 +116,7 @@ def run_preflight(
         serving_tier=(active.serving_tier.value if active and active.serving_tier else None),
         note="pilot serving is allowed; production requires a matching signed evaluator report",
     )
-    if model_ready and not registry.production_ready():
+    if model_ready and not registry.production_ready(analysis_mode):
         quality_check["status"] = "degraded"
     checks.append(quality_check)
 
@@ -118,7 +125,7 @@ def run_preflight(
     can_serve = not required_failures
     production_ready = bool(
         can_serve
-        and registry.production_ready()
+        and registry.production_ready(analysis_mode)
         and runtime["selected_mode"] == "real"
         and not runtime["degraded"]
     )
@@ -134,6 +141,7 @@ def run_preflight(
         "can_serve": can_serve,
         "production_ready": production_ready,
         "runtime": runtime,
+        "analysis_mode": analysis_mode.value,
         "checks": checks,
     }
 

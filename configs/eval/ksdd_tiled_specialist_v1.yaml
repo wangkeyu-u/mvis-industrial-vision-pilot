@@ -1,0 +1,14 @@
+dataset_manifest: data/processed/ksdd_tiled_v1/tile_manifest.json
+tile_records: data/processed/ksdd_tiled_v1/tile_records.jsonl
+prediction_schema: configs/eval/specialist_prediction.schema.json
+report_schema: configs/eval/specialist_report.schema.json
+thresholds:
+  heatmap: 0.5
+  image: 0.5
+  component_min_area: 1
+  bbox_iou: 0.5
+aggregation:
+  image_score: max_tile_score_per_source_image
+  pixel: micro_over_tiles
+  bbox: greedy_one_to_one_per_tile
+pilot_only: true

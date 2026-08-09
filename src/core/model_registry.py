@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict
 
 from src.core.errors import ErrorCode, ServiceError
 from src.core.schemas import (
+    AnalysisMode,
     AnalyzeOptions,
     AnalyzeTask,
     EvidenceObject,
@@ -29,6 +30,7 @@ from src.core.schemas import (
     QualityStatus,
     ServingTier,
 )
+from src.core.specialist_runtime import SpecialistRegistration
 
 
 class ModelState(StrEnum):
@@ -222,6 +224,8 @@ class ModelRegistry:
         self._lock = threading.RLock()
         self._models: dict[str, ModelRegistration] = {}
         self._aliases: dict[str, str] = {}
+        self._specialists: dict[str, SpecialistRegistration] = {}
+        self._specialist_aliases: dict[str, str] = {}
         self._audit: deque[ModelAuditRecord] = deque(maxlen=1000)
         self._audit_sequence = 0
         self._runtime: dict[str, object] = {
@@ -289,6 +293,30 @@ class ModelRegistry:
             if alias == "active" and self._models[model_id].state is not ModelState.ACTIVE:
                 raise ValueError("active alias requires a model in active state")
             self._aliases[alias] = model_id
+
+    def register_specialist(self, registration: SpecialistRegistration) -> None:
+        with self._lock:
+            if registration.specialist_id in self._specialists:
+                raise ValueError(
+                    f"specialist already registered: {registration.specialist_id}"
+                )
+            if registration.active and "active" in self._specialist_aliases:
+                raise ValueError("only one specialist may be registered active")
+            self._specialists[registration.specialist_id] = registration
+            if registration.active:
+                self._specialist_aliases["active"] = registration.specialist_id
+            else:
+                self._specialist_aliases.setdefault(
+                    "candidate", registration.specialist_id
+                )
+
+    def set_specialist_alias(self, alias: str, specialist_id: str) -> None:
+        with self._lock:
+            if specialist_id not in self._specialists:
+                raise ValueError(f"unknown specialist: {specialist_id}")
+            if alias == "active" and not self._specialists[specialist_id].active:
+                raise ValueError("active alias requires an active specialist")
+            self._specialist_aliases[alias] = specialist_id
 
     def transition(
         self,
@@ -571,14 +599,103 @@ class ModelRegistry:
         active = self.active()
         return bool(active and active.state is ModelState.ACTIVE and active.adapter.ready)
 
-    def production_ready(self) -> bool:
-        active = self.active()
-        return bool(
-            self.ready()
-            and active is not None
-            and active.serving_tier is ServingTier.PRODUCTION
-            and active.quality_accepted
+    def specialist_active(self) -> SpecialistRegistration | None:
+        with self._lock:
+            specialist_id = self._specialist_aliases.get("active")
+            return self._specialists.get(specialist_id) if specialist_id else None
+
+    def resolve_specialist(self, alias_or_id: str = "active") -> SpecialistRegistration:
+        with self._lock:
+            specialist_id = self._specialist_aliases.get(alias_or_id, alias_or_id)
+            registration = self._specialists.get(specialist_id)
+            if registration is None:
+                raise ServiceError(
+                    ErrorCode.MODEL_NOT_FOUND,
+                    f"specialist alias is not registered: {alias_or_id}",
+                )
+            if not registration.active or not registration.adapter.ready:
+                raise ServiceError(
+                    ErrorCode.MODEL_NOT_READY,
+                    f"specialist is not active and ready: {alias_or_id}",
+                )
+            return registration
+
+    def mode_runtime_ready(self, mode: AnalysisMode) -> bool:
+        model_ready = self.ready()
+        specialist = self.specialist_active()
+        specialist_ready = bool(
+            specialist and specialist.active and specialist.adapter.ready
         )
+        if mode is AnalysisMode.VLM_ONLY:
+            return model_ready
+        if mode is AnalysisMode.SPECIALIST_ONLY:
+            return specialist_ready
+        return model_ready and specialist_ready
+
+    def mode_quality_status(self, mode: AnalysisMode) -> QualityStatus:
+        active = self.active()
+        specialist = self.specialist_active()
+        statuses: list[QualityStatus] = []
+        if mode in {AnalysisMode.VLM_ONLY, AnalysisMode.FUSED} and active is not None:
+            statuses.append(active.quality_status)
+        if mode in {AnalysisMode.SPECIALIST_ONLY, AnalysisMode.FUSED} and specialist is not None:
+            statuses.append(specialist.quality_status)
+        if not statuses:
+            return QualityStatus.UNVALIDATED
+        priority = {
+            QualityStatus.PILOT_FAILED: 0,
+            QualityStatus.UNVALIDATED: 1,
+            QualityStatus.PILOT_CANDIDATE: 2,
+            QualityStatus.PILOT_PASSED: 3,
+        }
+        return min(statuses, key=priority.__getitem__)
+
+    def mode_quality_accepted(self, mode: AnalysisMode) -> bool:
+        active = self.active()
+        specialist = self.specialist_active()
+        if mode is AnalysisMode.VLM_ONLY:
+            return bool(active and active.quality_accepted)
+        if mode is AnalysisMode.SPECIALIST_ONLY:
+            return bool(specialist and specialist.quality_accepted)
+        return bool(
+            active
+            and active.quality_accepted
+            and specialist
+            and specialist.quality_accepted
+        )
+
+    def mode_serving_tier(self, mode: AnalysisMode) -> ServingTier:
+        active = self.active()
+        specialist = self.specialist_active()
+        tiers: list[ServingTier | None] = []
+        if mode in {AnalysisMode.VLM_ONLY, AnalysisMode.FUSED}:
+            tiers.append(active.serving_tier if active else None)
+        if mode in {AnalysisMode.SPECIALIST_ONLY, AnalysisMode.FUSED}:
+            tiers.append(specialist.serving_tier if specialist else None)
+        return (
+            ServingTier.PRODUCTION
+            if tiers and all(item is ServingTier.PRODUCTION for item in tiers)
+            else ServingTier.PILOT
+        )
+
+    def production_ready(self, mode: AnalysisMode = AnalysisMode.VLM_ONLY) -> bool:
+        return bool(
+            self.mode_runtime_ready(mode)
+            and self.mode_serving_tier(mode) is ServingTier.PRODUCTION
+            and self.mode_quality_accepted(mode)
+        )
+
+    def mode_statuses(self) -> dict[str, dict[str, object]]:
+        return {
+            mode.value: {
+                "runtime_ready": self.mode_runtime_ready(mode),
+                "quality_status": self.mode_quality_status(mode).value,
+                "quality_accepted": self.mode_quality_accepted(mode),
+                "serving_tier": self.mode_serving_tier(mode).value,
+                "production_ready": self.production_ready(mode),
+            }
+            for mode in AnalysisMode
+        }
 
     def statuses(self) -> dict[str, object]:
         with self._lock:
@@ -589,6 +706,12 @@ class ModelRegistry:
                 "production_ready": self.production_ready(),
                 "aliases": dict(sorted(self._aliases.items())),
                 "models": [self._models[key].public_status() for key in sorted(self._models)],
+                "specialist_aliases": dict(sorted(self._specialist_aliases.items())),
+                "specialists": [
+                    self._specialists[key].public_status()
+                    for key in sorted(self._specialists)
+                ],
+                "analysis_modes": self.mode_statuses(),
                 "audit_sequence": self._audit_sequence,
             }
 

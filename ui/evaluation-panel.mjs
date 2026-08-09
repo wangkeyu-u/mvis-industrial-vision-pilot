@@ -97,13 +97,22 @@ function renderPhase6Slices(elements, baseline, candidate) {
     section.append(list);
     return section;
   };
-  elements.phase6_slices.replaceChildren(column("A / ZERO-SHOT FAILURE SLICES", baseline), column("B / LORA FAILURE SLICES", candidate));
+  elements.phase6_slices.replaceChildren(column("A / VLM ZERO-SHOT FAILURE SLICES", baseline), column("B / CANDIDATE FAILURE SLICES", candidate));
 }
 
 function renderPhase6Pair(elements, pair, readiness) {
-  const runtimeReady = readiness?.ready === true
+  const baseRuntimeReady = readiness?.ready === true
     && readiness?.runtime?.selected_mode === "real"
     && readiness?.runtime?.degraded === false;
+  const candidateKind = pair.candidate?.candidateKind;
+  const candidateRuntimeReady = candidateKind === "specialist"
+    ? readiness?.analysisModes?.specialist_only?.runtime_ready === true
+    : candidateKind === "fused"
+      ? readiness?.analysisModes?.fused?.runtime_ready === true
+      : candidateKind === "lora"
+        ? readiness?.models?.some((model) => model?.model_id === readiness?.aliases?.candidate && model?.ready === true)
+        : false;
+  const runtimeReady = baseRuntimeReady && candidateRuntimeReady;
   elements.phase6_runtime_state.dataset.state = runtimeReady ? "runtime_ready" : "runtime_blocked";
   elements.phase6_runtime_state.textContent = runtimeReady ? "RUNTIME_READY" : "RUNTIME_BLOCKED";
 
@@ -128,19 +137,20 @@ function renderPhase6Pair(elements, pair, readiness) {
   elements.phase6_identity_grid.replaceChildren(
     identityCard("DATA MANIFEST SHA-256", baseline.dataManifestSha256),
     identityCard("PAIRED SAMPLE IDS", `${baseline.sampleIds.length} exact matches`),
-    identityCard("PROMPT IDENTITY", baseline.promptDisplay, baseline.promptIdentity),
+    identityCard("BASELINE PROMPT", baseline.promptDisplay, baseline.promptIdentity),
     identityCard("ZERO-SHOT REVISION", baseline.modelRevision),
-    identityCard("LORA BASE REVISION", candidate.modelRevision),
-    identityCard("LORA ADAPTER HASH", candidate.adapterHash),
+    identityCard("CANDIDATE KIND", candidate.candidateKind),
+    identityCard("CANDIDATE REVISION", candidate.modelRevision),
+    identityCard("ADAPTER / SPECIALIST", candidate.adapterHash || candidate.specialistIdentity),
     identityCard("ZERO-SHOT RUN", baseline.runId),
-    identityCard("LORA RUN", candidate.runId),
+    identityCard("CANDIDATE RUN", candidate.runId),
   );
 
   const table = node("table", "comparison-table phase6-metric-table");
-  const caption = node("caption", "sr-only", "Phase 6 零样本与 LoRA Pilot 指标对比");
+  const caption = node("caption", "sr-only", "零样本与定位候选 Pilot 指标对比");
   const head = node("thead");
   const header = node("tr");
-  for (const label of ["指标", "零样本", "零样本 CI", "LoRA", "LoRA CI", "变化", "状态"]) header.append(node("th", "", label));
+  for (const label of ["指标", "零样本", "零样本 CI", "候选", "候选 CI", "变化", "状态"]) header.append(node("th", "", label));
   head.append(header);
   const body = node("tbody");
   for (const metric of comparison.metrics) {
@@ -168,10 +178,10 @@ function renderPhase6Pair(elements, pair, readiness) {
     resourceCard("ZERO P95", resourceText(baseline.resources.p95LatencyMs, "ms")),
     resourceCard("ZERO RSS PEAK", resourceText(baseline.resources.processPeakRssMb ?? baseline.resources.peakMemoryMb, "MB")),
     resourceCard("ZERO MLX PEAK", resourceText(baseline.resources.mlxPeakAllocatedMb, "MB")),
-    resourceCard("LORA P50", resourceText(candidate.resources.p50LatencyMs, "ms")),
-    resourceCard("LORA P95", resourceText(candidate.resources.p95LatencyMs, "ms")),
-    resourceCard("LORA RSS PEAK", resourceText(candidate.resources.processPeakRssMb ?? candidate.resources.peakMemoryMb, "MB")),
-    resourceCard("LORA MLX PEAK", resourceText(candidate.resources.mlxPeakAllocatedMb, "MB")),
+    resourceCard("CANDIDATE P50", resourceText(candidate.resources.p50LatencyMs, "ms")),
+    resourceCard("CANDIDATE P95", resourceText(candidate.resources.p95LatencyMs, "ms")),
+    resourceCard("CANDIDATE RSS PEAK", resourceText(candidate.resources.processPeakRssMb ?? candidate.resources.peakMemoryMb, "MB")),
+    resourceCard("CANDIDATE MLX PEAK", resourceText(candidate.resources.mlxPeakAllocatedMb, "MB")),
   );
   renderPhase6Slices(elements, baseline, candidate);
   return comparison;
@@ -180,6 +190,9 @@ function renderPhase6Pair(elements, pair, readiness) {
 function renderDiagnostics(elements, readiness) {
   const runtime = readiness?.runtime || {};
   const models = Array.isArray(readiness?.models) ? readiness.models : [];
+  const specialists = Array.isArray(readiness?.specialists) ? readiness.specialists : [];
+  const analysisModes = readiness?.analysisModes && typeof readiness.analysisModes === "object"
+    ? readiness.analysisModes : {};
   const aliasText = Object.entries(readiness?.aliases || {}).map(([alias, model]) => `${alias}→${model}`).join(" · ") || "no aliases";
   const overview = node("article", "diagnostic-overview");
   const state = node("span", "diagnostic-state", readiness?.label || "未获取 readiness");
@@ -221,6 +234,30 @@ function renderDiagnostics(elements, readiness) {
       );
       modelList.append(card);
     }
+  }
+  for (const specialist of specialists) {
+    const card = node("article", "lifecycle-card");
+    card.dataset.state = specialist.runtime_ready ? "active" : "unavailable";
+    const head = node("div", "lifecycle-head");
+    head.append(node("strong", "", specialist.specialist_id || "unknown specialist"));
+    const badge = node("span", "lifecycle-state", specialist.runtime_ready ? "runtime_ready" : "runtime_blocked");
+    badge.dataset.state = specialist.runtime_ready ? "active" : "unavailable";
+    head.append(badge);
+    const ready = node("span", "model-ready", specialist.runtime_ready ? "READY" : "NOT READY");
+    ready.dataset.ready = String(Boolean(specialist.runtime_ready));
+    card.append(
+      head,
+      node("p", "", `${specialist.base || "unknown base"} · rev ${String(specialist.revision || "not recorded").slice(0, 12)}`),
+      node("small", "", `${specialist.source || "unknown source"} · ${specialist.quality_status || "quality unknown"}`),
+      ready,
+    );
+    modelList.append(card);
+  }
+  if (Object.keys(analysisModes).length) {
+    const modeSummary = node("p", "diagnostic-empty", Object.entries(analysisModes)
+      .map(([mode, state]) => `${mode}: ${state?.runtime_ready ? "runtime_ready" : "runtime_blocked"} / ${state?.quality_status || "quality unknown"}`)
+      .join(" · "));
+    modelList.append(modeSummary);
   }
   elements.runtime_diagnostics.replaceChildren(overview, modelList);
 }
@@ -391,7 +428,7 @@ export function initializeEvaluationPanel({ getReadiness, refreshReadiness, onPo
     slot.dataset.state = state;
     detail.textContent = portfolio
       ? `${portfolio.sourceName} · N=${portfolio.sampleCount} · ${portfolio.pilotDisposition || portfolio.acceptanceStatus} · ${portfolio.verified ? "SHA verified" : "unverified"}`
-      : role === "baseline" ? "等待 package_manifest 及全部 JSON 组件" : "等待 adapter hash 与评测组件";
+      : role === "baseline" ? "等待 package_manifest 及全部 JSON 组件" : "等待 specialist 身份或 adapter hash";
   };
   const importPhase6 = async (role) => {
     const input = role === "baseline" ? elements.phase6_baseline_input : elements.phase6_candidate_input;

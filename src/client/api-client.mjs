@@ -1,3 +1,5 @@
+import { normalizeEvidencePresentation } from "./evidence-presentation.mjs";
+
 const ACCEPTED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
@@ -93,7 +95,15 @@ function buildMockResult(request) {
     reason = "在当前图片与查询范围内未发现明确违规证据。";
   }
 
-  return {
+  const analysisMode = request.analysisMode || (request.useSpecialist ? "fused" : "vlm_only");
+  const specialistEnabled = analysisMode !== "vlm_only";
+  if (specialistEnabled && objects.length) {
+    objects = objects.map((object) => ({
+      ...object,
+      source: analysisMode === "fused" ? "fusion" : "patchcore",
+    }));
+  }
+  const payload = {
     schema_version: "1.0",
     request_id: requestId(),
     model: {
@@ -109,13 +119,48 @@ function buildMockResult(request) {
     latency_ms: 386,
     timing: { preprocess_ms: 42, inference_ms: 311, validation_ms: 33 },
     warnings,
+    analysis_mode: analysisMode,
+    vlm: analysisMode === "specialist_only" ? null : { result, reason },
+    specialist: specialistEnabled ? {
+      specialist_id: "browser-mock-specialist",
+      revision: "mock-only",
+      source: "patchcore",
+      model_id: "browser-mock-specialist",
+      real: false,
+      objects,
+      heatmap: {
+        available: objects.length > 0,
+        regions: objects.map((object) => ({ bbox: object.bbox, score: object.confidence, source: "mock-specialist" })),
+      },
+    } : null,
+    fusion: analysisMode === "fused" ? {
+      status: objects.length ? "mock_only" : "not_applicable",
+      gate_passed: false,
+      conflict: false,
+      reason: "浏览器 Mock 仅演示协作界面，不构成融合验收。",
+    } : null,
+    human_review: {
+      required: result !== "compliant",
+      reasons: result === "violation"
+        ? ["Mock 定位不得用于业务判断，请人工复核。"]
+        : uncertain ? [reason] : [],
+    },
+    localization_evidence: {
+      status: "mock_only",
+      eligible: false,
+      specialist_real: false,
+      fusion_gate_passed: false,
+      reason: "浏览器 Mock 不是真实定位证据。",
+    },
     trace: {
       task: request.task || "inspect",
-      use_specialist: Boolean(request.useSpecialist),
+      use_specialist: specialistEnabled,
       source: "browser-mock",
       image_persisted: false,
     },
   };
+  payload.evidence_presentation = normalizeEvidencePresentation(payload, { realRuntime: false });
+  return payload;
 }
 
 export class MockAnalysisClient {
@@ -192,7 +237,7 @@ export function normalizeAnalysisResponse(payload) {
   const policyState = warnings.some((warning) => String(warning).toLowerCase().startsWith("refusal:"))
     ? "refused"
     : payload.result;
-  return {
+  const normalized = {
     ...payload,
     policy_state: policyState,
     uncertain: Boolean(payload.uncertain),
@@ -203,6 +248,8 @@ export function normalizeAnalysisResponse(payload) {
       : [timing.preprocess_ms, timing.inference_ms, timing.validation_ms]
         .reduce((total, value) => total + (Number(value) || 0), 0),
   };
+  normalized.evidence_presentation = normalizeEvidencePresentation(normalized, { realRuntime: false });
+  return normalized;
 }
 
 function requestSignal(externalSignal, timeoutMs) {
@@ -231,6 +278,9 @@ export function classifyReadiness(payload) {
   const runtime = details.runtime && typeof details.runtime === "object" ? details.runtime : {};
   const aliases = details.aliases && typeof details.aliases === "object" ? details.aliases : {};
   const models = Array.isArray(details.models) ? details.models : [];
+  const specialists = Array.isArray(details.specialists) ? details.specialists : [];
+  const analysisModes = details.analysis_modes && typeof details.analysis_modes === "object"
+    ? details.analysis_modes : {};
   const activeModel = models.find((model) => model?.model_id === aliases.active) || null;
   const selectedMode = String(runtime.selected_mode || "unknown");
   const source = String(activeModel?.source || "");
@@ -246,6 +296,8 @@ export function classifyReadiness(payload) {
       activeModel,
       aliases,
       models,
+      specialists,
+      analysisModes,
     };
   }
   if (selectedMode !== "real" || runtime.degraded !== false || modelLooksLikeTestDouble) {
@@ -259,22 +311,29 @@ export function classifyReadiness(payload) {
       activeModel,
       aliases,
       models,
+      specialists,
+      analysisModes,
     };
   }
   return {
     ready: true,
     state: "real",
     label: "真实模型就绪",
-    detail: `${activeModel?.base || selectedMode} · FastAPI`,
+    detail: specialists.some((item) => item?.runtime_ready === false)
+      ? `${activeModel?.base || selectedMode} · specialist/fused 未就绪`
+      : `${activeModel?.base || selectedMode} · FastAPI`,
     requestId: payload?.request_id || null,
     runtime,
     activeModel,
     aliases,
     models,
+    specialists,
+    analysisModes,
   };
 }
 
 async function buildTransport(request, query, transport) {
+  const analysisMode = request.analysisMode || (request.useSpecialist ? "fused" : "vlm_only");
   if (transport === "multipart") {
     const body = new FormData();
     body.append("image", request.image, request.image.name || "upload-image");
@@ -282,6 +341,7 @@ async function buildTransport(request, query, transport) {
     body.append("task", request.task || "inspect");
     body.append("model", request.model || "active");
     body.append("use_specialist", String(Boolean(request.useSpecialist)));
+    body.append("analysis_mode", analysisMode);
     body.append("options", JSON.stringify({ temperature: 0, seed: 42, max_tokens: 256 }));
     return { body, headers: {} };
   }
@@ -294,6 +354,7 @@ async function buildTransport(request, query, transport) {
       task: request.task || "inspect",
       model: request.model || "active",
       use_specialist: Boolean(request.useSpecialist),
+      analysis_mode: analysisMode,
       options: { temperature: 0, seed: 42, max_tokens: 256 },
     }),
     headers: { "Content-Type": "application/json" },

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 from collections.abc import Callable, Mapping
 from dataclasses import replace
 from pathlib import Path
@@ -26,6 +27,10 @@ from src.core.schemas import (
     QualityEvidence,
     QualityStatus,
     ServingTier,
+)
+from src.core.specialist_runtime import (
+    SpecialistRegistration,
+    UnavailableSpecialistAdapter,
 )
 
 
@@ -58,17 +63,21 @@ class UnavailableModelAdapter:
 
 
 RealRegistrationLoader = Callable[[ServiceSettings], ModelRegistration]
+SpecialistRegistrationLoader = Callable[[ServiceSettings], SpecialistRegistration]
 
 
 def build_service_registry(
     settings: ServiceSettings,
     *,
     real_loader: RealRegistrationLoader | None = None,
+    specialist_loader: SpecialistRegistrationLoader | None = None,
 ) -> ModelRegistry:
     """Select mock/real and make every fallback visible in registry status."""
 
     if settings.model_mode == "mock":
-        return build_mock_registry()
+        registry = build_mock_registry()
+        _attach_specialist(registry, settings, specialist_loader)
+        return registry
 
     loader = real_loader or _build_real_registration
     try:
@@ -95,11 +104,37 @@ def build_service_registry(
         registry.register(lora_registration)
         registry.set_alias("zero_shot", real_registration.model_id)
         registry.set_alias("lora", lora_registration.model_id)
-    registry.set_runtime_status(
-        requested_mode=settings.model_mode,
-        selected_mode="real",
-        degraded=False,
-    )
+        if settings.active_model_alias == "lora":
+            if lora_registration.adapter.ready:
+                registry.validate_candidate(
+                    lora_registration.model_id,
+                    actor="startup",
+                    request_id="startup_lora_validate",
+                    reason="explicit MVIS_ACTIVE_MODEL_ALIAS=lora",
+                )
+                registry.activate(
+                    lora_registration.model_id,
+                    actor="startup",
+                    request_id="startup_lora_activate",
+                    reason="explicit pilot candidate selection",
+                    expected_active_model_id=real_registration.model_id,
+                    expected_active_fingerprint=real_registration.model_fingerprint,
+                    serving_tier=ServingTier.PILOT,
+                )
+            else:
+                registry.set_runtime_status(
+                    requested_mode=settings.model_mode,
+                    selected_mode="real",
+                    degraded=True,
+                    fallback_reason="explicit_lora_candidate_not_ready",
+                )
+    if registry.runtime_status()["requested_mode"] == "unconfigured":
+        registry.set_runtime_status(
+            requested_mode=settings.model_mode,
+            selected_mode="real",
+            degraded=False,
+        )
+    _attach_specialist(registry, settings, specialist_loader)
     return registry
 
 
@@ -201,7 +236,181 @@ def _unavailable_registry(
         degraded=True,
         fallback_reason=reason_code,
     )
+    _attach_specialist(registry, settings, None)
     return registry
+
+
+def _attach_specialist(
+    registry: ModelRegistry,
+    settings: ServiceSettings,
+    loader: SpecialistRegistrationLoader | None,
+) -> None:
+    try:
+        registration = loader(settings) if loader is not None else _build_specialist_registration(settings)
+    except Exception:  # noqa: BLE001 - specialist mode must fail explicitly, not service startup
+        registration = _unavailable_specialist_registration(
+            settings,
+            "specialist_initialization_failed",
+        )
+    registry.register_specialist(registration)
+
+
+def _build_specialist_registration(settings: ServiceSettings) -> SpecialistRegistration:
+    """Load a backend bridge when published; otherwise preserve a named unavailable entry."""
+
+    manifest = _read_specialist_manifest(settings.specialist_manifest_path)
+    if manifest is None:
+        return _unavailable_specialist_registration(
+            settings,
+            "specialist_artifact_unavailable",
+        )
+    try:
+        from src.inference.service_bridge import create_specialist_service_adapter
+    except (ImportError, AttributeError):
+        return _unavailable_specialist_registration(
+            settings,
+            "specialist_bridge_unavailable",
+            manifest=manifest,
+        )
+    try:
+        adapter = create_specialist_service_adapter(settings.specialist_manifest_path)
+    except Exception as exc:
+        raise RealAdapterUnavailable("specialist_load_failed") from exc
+    if not adapter.ready:
+        return _unavailable_specialist_registration(
+            settings,
+            "specialist_load_incomplete",
+            manifest=manifest,
+        )
+    provenance = _specialist_provenance(settings, manifest, adapter.identity)
+    status, evidence = _specialist_quality_for_provenance(settings, provenance)
+    return SpecialistRegistration(
+        specialist_id=settings.specialist_id,
+        adapter=adapter,
+        source=f"specialist-manifest:{Path(settings.specialist_manifest_path).name}",
+        provenance=provenance,
+        quality_status=status,
+        quality_evidence=evidence,
+        serving_tier=ServingTier.PILOT,
+    )
+
+
+def _unavailable_specialist_registration(
+    settings: ServiceSettings,
+    reason_code: str,
+    *,
+    manifest: dict[str, object] | None = None,
+) -> SpecialistRegistration:
+    identity = _specialist_identity(settings, manifest)
+    provenance = _specialist_provenance(settings, manifest, identity)
+    status, evidence = _specialist_quality_for_provenance(settings, provenance)
+    return SpecialistRegistration(
+        specialist_id=settings.specialist_id,
+        adapter=UnavailableSpecialistAdapter(identity, reason_code),
+        source=(
+            f"specialist-manifest:{Path(settings.specialist_manifest_path).name}"
+            if settings.specialist_manifest_path
+            else "specialist-manifest:awaiting-artifact"
+        ),
+        provenance=provenance,
+        quality_status=status,
+        quality_evidence=evidence,
+        serving_tier=ServingTier.PILOT,
+    )
+
+
+def _read_specialist_manifest(path: str | Path | None) -> dict[str, object] | None:
+    if path is None:
+        return None
+    candidate = Path(path)
+    try:
+        if (
+            not candidate.is_file()
+            or candidate.is_symlink()
+            or candidate.stat().st_size <= 0
+            or candidate.stat().st_size > 1024 * 1024
+        ):
+            return None
+        payload = json.loads(candidate.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _specialist_identity(
+    settings: ServiceSettings,
+    manifest: dict[str, object] | None,
+) -> ModelIdentity:
+    details = _manifest_identity_details(manifest)
+    return ModelIdentity(
+        base=str(details.get("model_id") or settings.specialist_id),
+        revision=str(details.get("revision") or "artifact-unavailable"),
+    )
+
+
+def _specialist_provenance(
+    settings: ServiceSettings,
+    manifest: dict[str, object] | None,
+    identity: ModelIdentity,
+) -> ModelProvenance:
+    details = _manifest_identity_details(manifest)
+    manifest_hash = _file_fingerprint(settings.specialist_manifest_path) if manifest else None
+    config_fingerprint = str(details.get("config_fingerprint") or manifest_hash or "0" * 64)
+    if len(config_fingerprint) not in {16, 64}:
+        config_fingerprint = hashlib.sha256(config_fingerprint.encode()).hexdigest()
+    artifact_hash = details.get("artifact_sha256") or details.get("weight_sha256")
+    if not isinstance(artifact_hash, str) or len(artifact_hash) != 64:
+        artifact_hash = None
+    return ModelProvenance(
+        model_id=identity.base,
+        checkpoint_revision=identity.revision,
+        backend=str(details.get("backend") or "anomaly-specialist"),
+        config_fingerprint=config_fingerprint,
+        config_artifact_sha256=manifest_hash,
+        adapter_hash=None,
+        weight_hash=artifact_hash,
+        data_version=str(details.get("data_version") or settings.specialist_data_version),
+        prompt_version=settings.specialist_prompt_version,
+    )
+
+
+def _manifest_identity_details(manifest: dict[str, object] | None) -> dict[str, object]:
+    if manifest is None:
+        return {}
+    for key in ("specialist", "model", "identity"):
+        value = manifest.get(key)
+        if isinstance(value, dict):
+            return value
+    configuration = manifest.get("configuration")
+    artifacts = manifest.get("artifacts")
+    if isinstance(configuration, dict) and isinstance(artifacts, dict):
+        algorithm = str(configuration.get("algorithm") or "specialist")
+        backbone = str(configuration.get("backbone") or "unknown")
+        return {
+            "model_id": f"anomalib/{algorithm}-{backbone}-ksdd-v0",
+            "revision": artifacts.get("checkpoint_sha256"),
+            "artifact_sha256": artifacts.get("checkpoint_sha256"),
+            "backend": f"anomalib-{algorithm}",
+            "data_version": configuration.get("dataset_version"),
+        }
+    return manifest
+
+
+def _specialist_quality_for_provenance(
+    settings: ServiceSettings,
+    provenance: ModelProvenance,
+) -> tuple[QualityStatus, QualityEvidence]:
+    verified, evidence = verify_evaluator_attestation(
+        settings.specialist_attestation_path,
+        settings.evaluator_signing_key,
+        provenance,
+    )
+    if verified is QualityStatus.PILOT_PASSED:
+        return verified, evidence
+    configured = QualityStatus(settings.specialist_quality_status)
+    if configured is QualityStatus.PILOT_PASSED:
+        configured = QualityStatus.PILOT_CANDIDATE
+    return configured, evidence
 
 
 def _configured_identity(
@@ -288,7 +497,11 @@ def _build_lora_registration(
     )
     adapter: object
     reason = "lora_artifact_unavailable"
-    if adapter_hash is not None and settings.lora_load_on_start:
+    manifest_failure = _lora_manifest_failure(settings, base, adapter_hash)
+    if manifest_failure is not None:
+        adapter = UnavailableModelAdapter(identity, manifest_failure)
+        reason = manifest_failure
+    elif adapter_hash is not None and settings.lora_load_on_start:
         try:
             from src.inference.config import load_model_config
             from src.inference.mlx_backend import MlxVlmBackend
@@ -330,13 +543,38 @@ def _build_lora_registration(
             if settings.lora_adapter_path
             else "lora-adapter:awaiting-artifact"
         ),
-        quantization="4-bit+lora-r8",
+        quantization="4-bit+lora",
         weight_hash=base.weight_hash,
         config_fingerprint=config_fingerprint,
         provenance=provenance,
         quality_status=quality_status,
         quality_evidence=quality_evidence,
     )
+
+
+def _lora_manifest_failure(
+    settings: ServiceSettings,
+    base: ModelProvenance,
+    adapter_hash: str | None,
+) -> str | None:
+    if settings.lora_run_manifest_path is None:
+        return None
+    manifest = _read_specialist_manifest(settings.lora_run_manifest_path)
+    if manifest is None:
+        return "lora_run_manifest_invalid"
+    artifacts = manifest.get("artifacts")
+    model = manifest.get("model")
+    if not isinstance(artifacts, dict) or not isinstance(model, dict):
+        return "lora_run_manifest_contract_invalid"
+    if manifest.get("status") != "completed" or manifest.get("run_kind") != "formal":
+        return "lora_run_not_completed"
+    if artifacts.get("adapter_sha256") != adapter_hash:
+        return "lora_adapter_hash_mismatch"
+    if model.get("revision") != base.checkpoint_revision:
+        return "lora_base_revision_mismatch"
+    if model.get("weight_sha256") != base.weight_hash:
+        return "lora_base_weight_hash_mismatch"
+    return None
 
 
 def _quality_for_provenance(
@@ -396,6 +634,9 @@ def _artifact_fingerprint(path: str | Path | None) -> str | None:
     safetensors = [item for item in regular_files if item.suffix == ".safetensors"]
     if candidate.is_file():
         return _stream_sha256(candidate)
+    canonical_adapter = candidate / "adapters.safetensors"
+    if canonical_adapter in regular_files:
+        return _stream_sha256(canonical_adapter)
     if len(safetensors) == 1:
         # mlx-vlm emits one adapter weights file plus a small JSON config. The
         # standard adapter hash is the weights-file digest reported by training.

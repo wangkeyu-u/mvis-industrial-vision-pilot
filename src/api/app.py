@@ -14,7 +14,7 @@ from typing import Annotated
 from fastapi import FastAPI, File, Form, Header, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import ValidationError
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -26,6 +26,7 @@ from src.core.model_registry import ModelRegistry
 from src.core.registry_factory import build_service_registry
 from src.core.schemas import (
     SCHEMA_VERSION,
+    AnalysisMode,
     AnalyzeOptions,
     AnalyzeResponse,
     AnalyzeTask,
@@ -58,10 +59,12 @@ class RequestContextMiddleware:
         app: ASGIApp,
         logger,  # type: ignore[no-untyped-def]
         registry: ModelRegistry,
+        analysis_mode: AnalysisMode,
     ) -> None:
         self.app = app
         self.logger = logger
         self.registry = registry
+        self.analysis_mode = analysis_mode
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -89,8 +92,18 @@ class RequestContextMiddleware:
         try:
             await self.app(scope, receive, send_with_request_id)
         finally:
+            try:
+                request_mode = AnalysisMode(
+                    scope.setdefault("state", {}).get(
+                        "analysis_mode", self.analysis_mode.value
+                    )
+                )
+            except ValueError:
+                request_mode = self.analysis_mode
             active = self.registry.active()
             provenance = active.provenance if active is not None else None
+            specialist = self.registry.specialist_active()
+            specialist_provenance = specialist.provenance if specialist is not None else None
             self.logger.info(
                 "http_request_completed",
                 extra={
@@ -111,7 +124,32 @@ class RequestContextMiddleware:
                     "serving_tier": (
                         active.serving_tier.value if active and active.serving_tier else None
                     ),
-                    "production_ready": self.registry.production_ready(),
+                    "production_ready": self.registry.production_ready(request_mode),
+                    "analysis_mode": request_mode.value,
+                    "specialist_id": specialist.specialist_id if specialist else None,
+                    "specialist_source": specialist.source if specialist else None,
+                    "specialist_revision": (
+                        specialist_provenance.checkpoint_revision
+                        if specialist_provenance
+                        else None
+                    ),
+                    "specialist_config_fingerprint": (
+                        specialist_provenance.config_fingerprint
+                        if specialist_provenance
+                        else None
+                    ),
+                    "specialist_weight_hash": (
+                        specialist_provenance.weight_hash if specialist_provenance else None
+                    ),
+                    "specialist_data_version": (
+                        specialist_provenance.data_version if specialist_provenance else None
+                    ),
+                    "specialist_quality_status": (
+                        specialist.quality_status.value if specialist else None
+                    ),
+                    "specialist_quality_accepted": (
+                        specialist.quality_accepted if specialist else False
+                    ),
                     "status": status_code,
                     "latency": {
                         "http_total_ms": max(0, round((time.perf_counter() - started) * 1000))
@@ -132,6 +170,7 @@ def create_app(
     model_registry = registry or build_service_registry(service_settings)
     configure_logging(service_settings.log_level)
     logger = get_logger()
+    default_analysis_mode = AnalysisMode(service_settings.default_analysis_mode)
 
     application = FastAPI(
         title="Lightweight Multimodal Vision API",
@@ -152,10 +191,12 @@ def create_app(
         RequestContextMiddleware,
         logger=logger,
         registry=model_registry,
+        analysis_mode=default_analysis_mode,
     )
     application.state.settings = service_settings
     application.state.registry = model_registry
     application.state.analyze_service = AnalyzeService(service_settings, model_registry)
+    application.state.heatmap_store = application.state.analyze_service.heatmap_store
     configured_model = model_registry.active()
     runtime_status = model_registry.runtime_status()
 
@@ -192,8 +233,13 @@ def create_app(
                 "runtime_mode": runtime_status["selected_mode"],
                 "degraded": runtime_status["degraded"],
                 "fallback_reason": runtime_status["fallback_reason"],
-                "status": "ready" if model_registry.ready() else "not_ready",
-                "production_ready": model_registry.production_ready(),
+                "status": (
+                    "ready"
+                    if model_registry.mode_runtime_ready(default_analysis_mode)
+                    else "not_ready"
+                ),
+                "production_ready": model_registry.production_ready(default_analysis_mode),
+                "analysis_mode": default_analysis_mode.value,
                 "memory_peak_mb": peak_memory_mb(),
             },
         )
@@ -299,6 +345,7 @@ def create_app(
         task: Annotated[str, Form()] = AnalyzeTask.INSPECT.value,
         model: Annotated[str, Form()] = "active",
         use_specialist: Annotated[bool, Form()] = False,
+        analysis_mode: Annotated[str | None, Form()] = None,
         options: Annotated[str | None, Form()] = None,
     ) -> AnalyzeResponse:
         media_type = request.headers.get("content-type", "").split(";", 1)[0].lower()
@@ -331,6 +378,7 @@ def create_app(
             parsed_task = json_request.task
             model = json_request.model
             use_specialist = json_request.use_specialist
+            parsed_analysis_mode = json_request.analysis_mode or default_analysis_mode
             parsed_options = json_request.options
         else:
             if image is None:
@@ -349,6 +397,15 @@ def create_app(
                     "task must be one of inspect, ground, extract, or vqa",
                 ) from exc
             try:
+                parsed_analysis_mode = AnalysisMode(
+                    analysis_mode or service_settings.default_analysis_mode
+                )
+            except ValueError as exc:
+                raise ServiceError(
+                    ErrorCode.INVALID_QUERY,
+                    "analysis_mode must be vlm_only, specialist_only, or fused",
+                ) from exc
+            try:
                 raw_options = json.loads(options) if options else {}
                 if not isinstance(raw_options, dict):
                     raise TypeError("options must be an object")
@@ -359,6 +416,7 @@ def create_app(
                     "options must be a JSON object containing only supported fields",
                 ) from exc
 
+        request.state.analysis_mode = parsed_analysis_mode.value
         response, log_fields = await application.state.analyze_service.analyze(
             AnalyzeCommand(
                 image=image_payload,
@@ -367,6 +425,7 @@ def create_app(
                 task=parsed_task,
                 model=model,
                 use_specialist=use_specialist,
+                analysis_mode=parsed_analysis_mode,
                 options=parsed_options,
             ),
             request.state.request_id,
@@ -394,7 +453,7 @@ def create_app(
         responses={503: {"model": HealthResponse}},
     )
     async def ready(request: Request):  # type: ignore[no-untyped-def]
-        is_ready = model_registry.ready()
+        is_ready = model_registry.mode_runtime_ready(default_analysis_mode)
         body = HealthResponse(
             status="ready" if is_ready else "not_ready",
             request_id=request.state.request_id,
@@ -419,14 +478,41 @@ def create_app(
             serving_tier=active.serving_tier if active else None,
             runtime=model_registry.runtime_status()
             | {
-                "runtime_ready": model_registry.ready(),
-                "production_ready": model_registry.production_ready(),
+                "runtime_ready": model_registry.mode_runtime_ready(default_analysis_mode),
+                "production_ready": model_registry.production_ready(default_analysis_mode),
+                "default_analysis_mode": default_analysis_mode.value,
+                "analysis_modes": model_registry.mode_statuses(),
+                "specialist": (
+                    model_registry.specialist_active().public_status()
+                    if model_registry.specialist_active() is not None
+                    else None
+                ),
             },
         )
 
     @application.get("/v1/models")
     async def models() -> dict[str, object]:
         return model_registry.statuses()
+
+    @application.get(
+        "/v1/artifacts/heatmaps/{artifact_id}",
+        responses={404: {"model": ErrorResponse}},
+    )
+    async def heatmap_artifact(artifact_id: str) -> Response:
+        if not re.fullmatch(r"hm_[0-9a-f]{32}", artifact_id):
+            raise ServiceError(ErrorCode.ARTIFACT_NOT_FOUND, "heatmap artifact was not found")
+        content = application.state.heatmap_store.get(artifact_id)
+        if content is None:
+            raise ServiceError(ErrorCode.ARTIFACT_NOT_FOUND, "heatmap artifact was not found")
+        return Response(
+            content=content,
+            media_type="image/png",
+            headers={
+                "Cache-Control": "private, max-age=0, no-store",
+                "Content-Security-Policy": "default-src 'none'; sandbox",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
 
     def authorize_modelops(token: str | None, actor: str | None) -> str:
         configured_token = service_settings.modelops_token

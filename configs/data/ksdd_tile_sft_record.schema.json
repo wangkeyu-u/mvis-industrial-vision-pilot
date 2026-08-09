@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mvis.local/schemas/ksdd_tile_sft_record.schema.json",
+  "title": "MLX-VLM KSDD Tile SFT Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sample_id", "source_sample_id", "entity_id", "split", "tile_size",
+    "dataset_version", "prompt_version", "prompt_variant", "coordinate_space",
+    "images", "messages"
+  ],
+  "properties": {
+    "sample_id": {"type": "string", "minLength": 1},
+    "source_sample_id": {"type": "string", "minLength": 1},
+    "entity_id": {"type": "string", "minLength": 1},
+    "split": {"enum": ["train", "valid", "test"]},
+    "tile_size": {"type": "integer", "minimum": 1},
+    "dataset_version": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*-[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "prompt_version": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*-[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "prompt_variant": {"type": "string", "minLength": 1},
+    "coordinate_space": {"const": "tile_local_xyxy"},
+    "images": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 1},
+    "messages": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["role", "content"],
+        "properties": {
+          "role": {"enum": ["user", "assistant"]},
+          "content": {"type": "array", "minItems": 1}
+        }
+      }
+    }
+  }
+}

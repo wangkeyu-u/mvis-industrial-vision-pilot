@@ -59,6 +59,32 @@ def main(argv: list[str] | None = None) -> int:
         )
         _print_json(report)
         return 0 if report["status"] == "passed" else 2
+    if args.command == "release-validate":
+        from src.observability.release_validation import (
+            run_phase7_release_acceptance,
+            write_phase7_release_reports,
+        )
+
+        release_settings = replace(
+            settings,
+            model_mode="real",
+            default_analysis_mode=args.analysis_mode,
+        )
+        report = run_phase7_release_acceptance(
+            release_settings,
+            sample_path=args.sample,
+            host=args.host,
+            port=args.port,
+            warmup_runs=args.warmup_runs,
+            measured_runs=args.measured_runs,
+        )
+        write_phase7_release_reports(
+            report,
+            json_path=args.json_output,
+            markdown_path=args.markdown_output,
+        )
+        _print_json(report)
+        return 0 if report["pilot_status"] == "passed" else 2
 
     registry = build_service_registry(settings)
     preflight = run_preflight(settings, registry)
@@ -161,6 +187,28 @@ def _parser() -> argparse.ArgumentParser:
         "--run-manifest",
         default=None,
         help="optional algorithm training manifest included as bounded blocker evidence",
+    )
+    release_validate = subparsers.add_parser(
+        "release-validate",
+        help="strict-real phase-7 Uvicorn acceptance for one explicit analysis mode",
+    )
+    release_validate.add_argument(
+        "--analysis-mode",
+        choices=("vlm_only", "specialist_only", "fused"),
+        default="fused",
+    )
+    release_validate.add_argument("--sample", required=True)
+    release_validate.add_argument("--host", default="127.0.0.1")
+    release_validate.add_argument("--port", type=int, default=18087)
+    release_validate.add_argument("--warmup-runs", type=int, default=5)
+    release_validate.add_argument("--measured-runs", type=int, default=30)
+    release_validate.add_argument(
+        "--json-output",
+        default="docs/deployment/phase7_release_report.json",
+    )
+    release_validate.add_argument(
+        "--markdown-output",
+        default="docs/deployment/phase7_release_report.md",
     )
 
     validate = subparsers.add_parser(
