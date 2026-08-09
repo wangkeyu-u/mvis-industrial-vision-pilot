@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.mvis/schemas/ksdd-sft-answer-1.0.0.json",
+  "title": "KSDD strict visual-compliance SFT answer",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["result", "objects", "reason", "uncertain"],
+  "properties": {
+    "result": {"enum": ["compliant", "violation"]},
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "bbox"],
+        "properties": {
+          "label": {"const": "surface_defect"},
+          "bbox": {
+            "type": "array",
+            "prefixItems": [
+              {"type": "integer", "minimum": 0},
+              {"type": "integer", "minimum": 0},
+              {"type": "integer", "minimum": 1},
+              {"type": "integer", "minimum": 1}
+            ],
+            "minItems": 4,
+            "maxItems": 4
+          }
+        }
+      }
+    },
+    "reason": {"type": "string", "minLength": 1},
+    "uncertain": {"const": false}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"result": {"const": "compliant"}}},
+      "then": {"properties": {"objects": {"maxItems": 0}}}
+    },
+    {
+      "if": {"properties": {"result": {"const": "violation"}}},
+      "then": {"properties": {"objects": {"minItems": 1}}}
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import {
+  compareEvaluationPortfolios,
   EvaluationImportError,
   parseEvaluationFiles,
   parseEvaluationPayload,
@@ -11,6 +12,10 @@ const ids = [
   "evaluation-watermark", "evaluation-source", "evaluation-provenance-detail",
   "evaluation-truth-badge", "evaluation-acceptance", "evaluation-summary",
   "evaluation-comparison", "evaluation-kpis", "evaluation-slices", "evaluation-failures",
+  "phase6-runtime-state", "phase6-quality-state", "phase6-baseline-slot", "phase6-candidate-slot",
+  "phase6-baseline-input", "phase6-candidate-input", "select-phase6-baseline", "select-phase6-candidate",
+  "phase6-baseline-detail", "phase6-candidate-detail", "phase6-compare-alert", "phase6-comparison-content",
+  "phase6-identity-grid", "phase6-metrics", "phase6-resources", "phase6-slices",
 ];
 
 function elementMap() {
@@ -41,7 +46,135 @@ function statusLabel(status) {
     not_evaluable: "不可评估",
     fixture_only: "FIXTURE",
     mock_only: "MOCK",
+    pilot_only: "PILOT ONLY",
+    pilot_failed: "PILOT FAILED",
+    pilot_candidate: "PILOT CANDIDATE",
   })[status] || String(status || "unknown");
+}
+
+function compactText(value, fallback = "not recorded") {
+  if (typeof value !== "string" || !value.trim()) return fallback;
+  const normalized = value.replace(/\s+/g, " ").trim();
+  return normalized.length > 92 ? `${normalized.slice(0, 89)}…` : normalized;
+}
+
+function intervalText(interval) {
+  return interval?.lower != null && interval?.upper != null
+    ? `${formatPercent(interval.lower)}–${formatPercent(interval.upper)} · N=${interval.observationCount ?? "—"}`
+    : "not reported";
+}
+
+function resourceText(value, unit) {
+  return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(value < 100 ? 1 : 0)} ${unit}` : "not recorded";
+}
+
+function identityCard(label, value, title = value) {
+  const card = node("article", "phase6-identity-card");
+  const strong = node("strong", "", compactText(value));
+  strong.title = title || "not recorded";
+  card.append(node("small", "", label), strong);
+  return card;
+}
+
+function resourceCard(label, value) {
+  const card = node("article", "phase6-resource-card");
+  card.append(node("small", "", label), node("strong", "", value));
+  return card;
+}
+
+function renderPhase6Slices(elements, baseline, candidate) {
+  const column = (label, portfolio) => {
+    const section = node("section", "phase6-slice-column");
+    section.append(node("strong", "", label));
+    const list = node("ul");
+    const slices = portfolio.slices.slice(0, 5);
+    if (!slices.length) list.append(node("li", "", "no slice metrics"));
+    for (const slice of slices) {
+      const item = node("li");
+      item.append(node("span", "", slice.name), node("span", "", `fail ${formatPercent(slice.failureRate)} · N=${slice.sample_count}`));
+      list.append(item);
+    }
+    section.append(list);
+    return section;
+  };
+  elements.phase6_slices.replaceChildren(column("A / ZERO-SHOT FAILURE SLICES", baseline), column("B / LORA FAILURE SLICES", candidate));
+}
+
+function renderPhase6Pair(elements, pair, readiness) {
+  const runtimeReady = readiness?.ready === true
+    && readiness?.runtime?.selected_mode === "real"
+    && readiness?.runtime?.degraded === false;
+  elements.phase6_runtime_state.dataset.state = runtimeReady ? "runtime_ready" : "runtime_blocked";
+  elements.phase6_runtime_state.textContent = runtimeReady ? "RUNTIME_READY" : "RUNTIME_BLOCKED";
+
+  const comparison = compareEvaluationPortfolios(pair.baseline, pair.candidate);
+  elements.phase6_quality_state.dataset.state = comparison.qualityStatus;
+  elements.phase6_quality_state.textContent = comparison.qualityStatus.toUpperCase();
+  if (!comparison.allowed) {
+    elements.phase6_compare_alert.dataset.state = pair.baseline || pair.candidate ? "blocked" : "pending";
+    elements.phase6_compare_alert.textContent = comparison.reasons.map((reason) => `${reason.code} · ${reason.message}`).join(" ");
+    elements.phase6_comparison_content.hidden = true;
+    elements.phase6_identity_grid.replaceChildren();
+    elements.phase6_metrics.replaceChildren();
+    elements.phase6_resources.replaceChildren();
+    elements.phase6_slices.replaceChildren();
+    return comparison;
+  }
+
+  const { baseline, candidate } = pair;
+  elements.phase6_compare_alert.dataset.state = "pass";
+  elements.phase6_compare_alert.textContent = `PAIR VERIFIED · ${comparison.pilotSampleCount} 个 sample ID 完全一致；quality_accepted=false，formal KPI claim locked。`;
+  elements.phase6_comparison_content.hidden = false;
+  elements.phase6_identity_grid.replaceChildren(
+    identityCard("DATA MANIFEST SHA-256", baseline.dataManifestSha256),
+    identityCard("PAIRED SAMPLE IDS", `${baseline.sampleIds.length} exact matches`),
+    identityCard("PROMPT IDENTITY", baseline.promptDisplay, baseline.promptIdentity),
+    identityCard("ZERO-SHOT REVISION", baseline.modelRevision),
+    identityCard("LORA BASE REVISION", candidate.modelRevision),
+    identityCard("LORA ADAPTER HASH", candidate.adapterHash),
+    identityCard("ZERO-SHOT RUN", baseline.runId),
+    identityCard("LORA RUN", candidate.runId),
+  );
+
+  const table = node("table", "comparison-table phase6-metric-table");
+  const caption = node("caption", "sr-only", "Phase 6 零样本与 LoRA Pilot 指标对比");
+  const head = node("thead");
+  const header = node("tr");
+  for (const label of ["指标", "零样本", "零样本 CI", "LoRA", "LoRA CI", "变化", "状态"]) header.append(node("th", "", label));
+  head.append(header);
+  const body = node("tbody");
+  for (const metric of comparison.metrics) {
+    const row = node("tr");
+    const favorable = metric.direction === "lower" ? metric.delta <= 0 : metric.delta >= 0;
+    row.append(
+      node("th", "", metric.label),
+      node("td", "metric-number", formatPercent(metric.baseline)),
+      node("td", "metric-interval", intervalText(metric.baselineInterval)),
+      node("td", "metric-number is-candidate", formatPercent(metric.candidate)),
+      node("td", "metric-interval", intervalText(metric.candidateInterval)),
+      node("td", "metric-number", formatDelta(metric.delta)),
+    );
+    const statusCell = node("td");
+    const badge = node("span", "metric-status", favorable ? "direction OK" : "direction REGRESSED");
+    badge.dataset.status = favorable ? "pilot_only" : "failed";
+    statusCell.append(badge);
+    row.append(statusCell);
+    body.append(row);
+  }
+  table.append(caption, head, body);
+  elements.phase6_metrics.replaceChildren(table);
+  elements.phase6_resources.replaceChildren(
+    resourceCard("ZERO P50", resourceText(baseline.resources.p50LatencyMs, "ms")),
+    resourceCard("ZERO P95", resourceText(baseline.resources.p95LatencyMs, "ms")),
+    resourceCard("ZERO RSS PEAK", resourceText(baseline.resources.processPeakRssMb ?? baseline.resources.peakMemoryMb, "MB")),
+    resourceCard("ZERO MLX PEAK", resourceText(baseline.resources.mlxPeakAllocatedMb, "MB")),
+    resourceCard("LORA P50", resourceText(candidate.resources.p50LatencyMs, "ms")),
+    resourceCard("LORA P95", resourceText(candidate.resources.p95LatencyMs, "ms")),
+    resourceCard("LORA RSS PEAK", resourceText(candidate.resources.processPeakRssMb ?? candidate.resources.peakMemoryMb, "MB")),
+    resourceCard("LORA MLX PEAK", resourceText(candidate.resources.mlxPeakAllocatedMb, "MB")),
+  );
+  renderPhase6Slices(elements, baseline, candidate);
+  return comparison;
 }
 
 function renderDiagnostics(elements, readiness) {
@@ -210,9 +343,11 @@ function renderPortfolio(elements, portfolio) {
     portfolio.frozenTest === true ? "frozen test" : null,
   ].filter(Boolean).join(" · ");
   elements.evaluation_truth_badge.dataset.state = portfolio.truthState;
-  elements.evaluation_truth_badge.textContent = ({ fixture: "FIXTURE", mock: "MOCK OUTPUT", verified: "PACKAGE VERIFIED", unverified: "UNVERIFIED" })[portfolio.truthState];
+  elements.evaluation_truth_badge.textContent = ({ fixture: "FIXTURE", mock: "MOCK OUTPUT", pilot: "VERIFIED PILOT", verified: "PACKAGE VERIFIED", unverified: "UNVERIFIED" })[portfolio.truthState];
   elements.evaluation_acceptance.dataset.state = portfolio.acceptanceStatus;
-  elements.evaluation_acceptance.textContent = portfolio.eligibleForModelAcceptance
+  elements.evaluation_acceptance.textContent = portfolio.pilotDisposition
+    ? `${portfolio.pilotDisposition.toUpperCase()} · FORMAL KPI LOCKED`
+    : portfolio.eligibleForModelAcceptance
     ? "MODEL ACCEPTANCE ELIGIBLE"
     : `${statusLabel(portfolio.acceptanceStatus).toUpperCase()} · NOT ELIGIBLE`;
   elements.evaluation_summary.replaceChildren(
@@ -230,6 +365,8 @@ function renderPortfolio(elements, portfolio) {
 export function initializeEvaluationPanel({ getReadiness, refreshReadiness, onPortfolioChange = () => {} }) {
   const elements = elementMap();
   let importSequence = 0;
+  const phase6Pair = { baseline: null, candidate: null };
+  let phase6ImportSequence = 0;
 
   const showAlert = (message = "", code = "") => {
     elements.evaluation_alert.textContent = message ? `${code ? `${code} · ` : ""}${message}` : "";
@@ -247,6 +384,46 @@ export function initializeEvaluationPanel({ getReadiness, refreshReadiness, onPo
     elements.evaluation_panel.setAttribute("aria-busy", String(busy));
     elements.select_evaluation.disabled = busy;
     elements.load_evaluation_fixture.disabled = busy;
+  };
+  const renderPhase6Slot = (role, portfolio, state = "verified") => {
+    const slot = role === "baseline" ? elements.phase6_baseline_slot : elements.phase6_candidate_slot;
+    const detail = role === "baseline" ? elements.phase6_baseline_detail : elements.phase6_candidate_detail;
+    slot.dataset.state = state;
+    detail.textContent = portfolio
+      ? `${portfolio.sourceName} · N=${portfolio.sampleCount} · ${portfolio.pilotDisposition || portfolio.acceptanceStatus} · ${portfolio.verified ? "SHA verified" : "unverified"}`
+      : role === "baseline" ? "等待 package_manifest 及全部 JSON 组件" : "等待 adapter hash 与评测组件";
+  };
+  const importPhase6 = async (role) => {
+    const input = role === "baseline" ? elements.phase6_baseline_input : elements.phase6_candidate_input;
+    const button = role === "baseline" ? elements.select_phase6_baseline : elements.select_phase6_candidate;
+    const token = ++phase6ImportSequence;
+    phase6Pair[role] = null;
+    renderPhase6Slot(role, null, "empty");
+    renderPhase6Pair(elements, phase6Pair, getReadiness());
+    button.disabled = true;
+    try {
+      const portfolio = await parseEvaluationFiles(input.files);
+      if (token !== phase6ImportSequence) return;
+      phase6Pair[role] = portfolio;
+      renderPhase6Slot(role, portfolio, portfolio.verified ? "verified" : "error");
+      const comparison = renderPhase6Pair(elements, phase6Pair, getReadiness());
+      if (role === "candidate") {
+        renderPortfolio(elements, portfolio);
+        onPortfolioChange(portfolio);
+      }
+      if (!comparison.allowed && phase6Pair.baseline && phase6Pair.candidate) onPortfolioChange(null);
+    } catch (error) {
+      if (token !== phase6ImportSequence) return;
+      renderPhase6Slot(role, null, "error");
+      const known = error instanceof EvaluationImportError;
+      elements.phase6_compare_alert.dataset.state = "blocked";
+      elements.phase6_compare_alert.textContent = `${known ? error.code : "IMPORT_FAILED"} · ${error.message || "无法读取 Phase 6 package。"}`;
+      elements.phase6_comparison_content.hidden = true;
+      onPortfolioChange(null);
+    } finally {
+      if (token === phase6ImportSequence) button.disabled = false;
+      input.value = "";
+    }
   };
   const acceptPortfolio = (portfolio, token) => {
     if (token !== importSequence) return;
@@ -306,6 +483,10 @@ export function initializeEvaluationPanel({ getReadiness, refreshReadiness, onPo
   elements.select_evaluation.addEventListener("click", () => elements.evaluation_input.click());
   elements.evaluation_input.addEventListener("change", importFiles);
   elements.load_evaluation_fixture.addEventListener("click", loadFixture);
+  elements.select_phase6_baseline.addEventListener("click", () => elements.phase6_baseline_input.click());
+  elements.select_phase6_candidate.addEventListener("click", () => elements.phase6_candidate_input.click());
+  elements.phase6_baseline_input.addEventListener("change", () => importPhase6("baseline"));
+  elements.phase6_candidate_input.addEventListener("change", () => importPhase6("candidate"));
   elements.clear_evaluation.addEventListener("click", () => { resetPortfolio("评测证据已清空。"); showAlert(); });
   elements.refresh_diagnostics.addEventListener("click", async () => {
     elements.refresh_diagnostics.disabled = true;
@@ -324,9 +505,11 @@ export function initializeEvaluationPanel({ getReadiness, refreshReadiness, onPo
     if (event.key === "Escape" && !elements.evaluation_panel.hidden) closePanel();
   });
   renderDiagnostics(elements, getReadiness());
+  renderPhase6Pair(elements, phase6Pair, getReadiness());
   return {
     updateReadiness(readiness) {
       if (!elements.evaluation_panel.hidden) renderDiagnostics(elements, readiness);
+      renderPhase6Pair(elements, phase6Pair, readiness);
     },
   };
 }

@@ -225,6 +225,49 @@
         <button id="load-evaluation-fixture" class="lab-action" type="button">加载 fixture 示例</button>
         <button id="clear-evaluation" class="lab-action" type="button">清空</button>
       </div>
+
+      <section class="phase6-workbench" aria-labelledby="phase6-heading">
+        <header class="phase6-heading-row">
+          <div>
+            <p class="eyebrow">PHASE 6 / CONTROLLED COMPARISON</p>
+            <h3 id="phase6-heading">真实零样本 × LoRA Pilot</h3>
+            <p>双包分别验签；数据 manifest、sample IDs、prompt 与基础 revision 完全一致后才开放指标对比。</p>
+          </div>
+          <div class="phase6-state-rail" aria-label="运行与质量状态">
+            <span id="phase6-runtime-state" class="phase6-state" data-state="runtime_unknown">RUNTIME_UNKNOWN</span>
+            <span id="phase6-quality-state" class="phase6-state" data-state="not_loaded">QUALITY_NOT_LOADED</span>
+            <span class="phase6-state is-locked" data-state="formal_locked">FORMAL KPI LOCKED</span>
+          </div>
+        </header>
+
+        <div class="phase6-import-grid">
+          <article id="phase6-baseline-slot" class="phase6-package-slot" data-state="empty">
+            <input id="phase6-baseline-input" type="file" accept="application/json,.json" multiple hidden />
+            <div class="phase6-slot-index">A / ZERO-SHOT</div>
+            <strong>零样本 Pilot 证据包</strong>
+            <p id="phase6-baseline-detail">等待 package_manifest 及全部 JSON 组件</p>
+            <button id="select-phase6-baseline" class="lab-action" type="button">导入零样本包</button>
+          </article>
+          <div class="phase6-link" aria-hidden="true"><span></span><b>PAIR</b><span></span></div>
+          <article id="phase6-candidate-slot" class="phase6-package-slot" data-state="empty">
+            <input id="phase6-candidate-input" type="file" accept="application/json,.json" multiple hidden />
+            <div class="phase6-slot-index">B / LORA</div>
+            <strong>LoRA Pilot 证据包</strong>
+            <p id="phase6-candidate-detail">等待 adapter hash 与评测组件</p>
+            <button id="select-phase6-candidate" class="lab-action" type="button">导入 LoRA 包</button>
+          </article>
+        </div>
+
+        <div id="phase6-compare-alert" class="phase6-compare-alert" role="alert">
+          PAIR_INCOMPLETE · 两侧证据齐备前不计算差值。
+        </div>
+        <div id="phase6-comparison-content" class="phase6-comparison-content" hidden>
+          <div id="phase6-identity-grid" class="phase6-identity-grid"></div>
+          <div id="phase6-metrics" class="table-scroll"></div>
+          <div id="phase6-resources" class="phase6-resource-grid"></div>
+          <div id="phase6-slices" class="phase6-paired-slices"></div>
+        </div>
+      </section>
       <div id="evaluation-alert" class="evaluation-alert" role="alert" hidden></div>
       <div id="evaluation-empty" class="evaluation-empty">
         <span>NO EVALUATION ARTIFACT LOADED</span>

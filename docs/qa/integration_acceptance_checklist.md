@@ -124,3 +124,20 @@ python3 -m json.tool ui/fixtures/evaluation-package.fixture.json >/dev/null
 | P5-09 | 正式模型成绩 | 非 fixture evaluator package 哈希、provenance、样本门槛均通过 | 阻塞：仅 fixture；KSDD pilot test=56，低于 300 |
 
 完整真实证据、request_id 和阻塞项见 `docs/qa/phase5_real_e2e_report.md`。
+
+## 第六阶段零样本 / LoRA Pilot 准入
+
+| 编号 | 验收项 | 通过标准 | 当前证据 |
+|---|---|---|---|
+| P6-01 | 双包真实性 | 两侧均为非 fixture/mock、`pilot_only=true` 且 package JSON 哈希通过 | 零样本通过；LoRA 包缺失 |
+| P6-02 | 公平总体 | data manifest SHA-256、唯一 sample ID 集合、prompt、基础 revision 全部相同 | 客户端门禁完成；真实 pair 待 LoRA |
+| P6-03 | adapter 身份 | 零样本无 adapter hash；LoRA 必须提供 adapter SHA-256 | 零样本通过；LoRA 待验 |
+| P6-04 | 五项指标与 CI | 两侧五项点估计、各自 CI、delta 和方向均可读 | UI 完成；真实 pair 待验 |
+| P6-05 | 失败切片 | 两侧切片 N/失败率/失败码并排展示 | UI 完成；真实 pair 待验 |
+| P6-06 | 延迟/内存 | 两侧 P50/P95、process RSS peak、MLX allocator peak 分口径显示 | 零样本真实证据通过；LoRA 待验 |
+| P6-07 | 运行/质量分离 | `runtime_ready` 不推导 `quality_accepted` | Mock 浏览器实测 + UI 状态逻辑 |
+| P6-08 | Pilot 标签 | 仅 `pilot_failed` / `pilot_candidate`；56 样本永久锁定正式 KPI | 客户端门禁 + 真实零样本浏览器通过 |
+| P6-09 | 不匹配失败关闭 | manifest/sample ID 任一不一致时隐藏对比并清空可验收 portfolio | 解析器反例通过；真实不匹配包不伪造 |
+| P6-10 | 真实浏览器对比 | 实际导入算法零样本与 LoRA 正式 pilot 包并记录证据 | 阻塞：LoRA smoke `resource_limit_exceeded`，adapter/package 未生成 |
+
+完整状态与真实零样本证据见 `docs/qa/phase6_baseline_lora_report.md`；8–10 分钟路径见 `docs/qa/phase6_interview_script.md`。

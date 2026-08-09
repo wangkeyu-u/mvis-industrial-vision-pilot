@@ -121,6 +121,48 @@ class ModelOutput(BaseModel):
 class ModelIdentity(BaseModel):
     base: str
     adapter: str | None = None
+    revision: str = "unversioned"
+
+
+class QualityStatus(StrEnum):
+    UNVALIDATED = "unvalidated"
+    PILOT_FAILED = "pilot_failed"
+    PILOT_CANDIDATE = "pilot_candidate"
+    PILOT_PASSED = "pilot_passed"
+
+
+class ServingTier(StrEnum):
+    PILOT = "pilot"
+    PRODUCTION = "production"
+
+
+class ModelProvenance(BaseModel):
+    """Immutable model/config/data/prompt identity published by every API surface."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    model_id: str
+    checkpoint_revision: str
+    backend: str
+    config_fingerprint: str = Field(pattern=r"^[0-9a-f]{16,64}$")
+    config_artifact_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    adapter_hash: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    weight_hash: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    data_version: str
+    prompt_version: str
+
+
+class QualityEvidence(BaseModel):
+    """Non-secret verification result for a detached evaluator attestation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    signature_verified: bool = False
+    algorithm: str | None = None
+    key_id: str | None = None
+    report_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    attestation_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    failure_reason: str | None = None
 
 
 class LatencyBreakdown(BaseModel):
@@ -133,6 +175,10 @@ class AnalyzeResponse(BaseModel):
     schema_version: str = SCHEMA_VERSION
     request_id: str
     model: ModelIdentity
+    provenance: ModelProvenance
+    quality_status: QualityStatus
+    quality_accepted: bool
+    serving_tier: ServingTier
     result: str
     objects: list[EvidenceObject]
     reason: str
@@ -167,6 +213,10 @@ class VersionResponse(BaseModel):
     api: str
     schema_version: str
     model: ModelIdentity | None
+    provenance: ModelProvenance | None
+    quality_status: QualityStatus | None
+    quality_accepted: bool
+    serving_tier: ServingTier | None
     runtime: dict[str, Any]
 
 
@@ -178,6 +228,7 @@ class ModelOpsActionRequest(BaseModel):
     reason: str = Field(min_length=1, max_length=256)
     expected_active_model_id: str | None = Field(default=None, min_length=1, max_length=128)
     expected_active_fingerprint: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    serving_tier: ServingTier = ServingTier.PILOT
 
     @field_validator("reason")
     @classmethod

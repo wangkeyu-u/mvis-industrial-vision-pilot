@@ -26,7 +26,7 @@ MVIS_MODEL_MODE=auto PYTHONPATH=. \
 MVIS_MODEL_MODE=auto PYTHONPATH=. python -m src.api preflight
 ```
 
-检查项包括：版本化 service/model 配置存在性、实现与配置的 API Schema 版本、active 模型 readiness、降级状态、工作区磁盘余量、12GB 进程内存预算和设备物理内存。输出是单个 JSON 文档，`can_serve` 表示是否可以启动，`production_ready` 只有非降级真实模型才可能为 true。
+检查项包括：版本化 service/model 配置存在性、实现与配置的 API Schema 版本、active 模型 readiness、质量验收、降级状态、工作区磁盘余量、12GB 进程内存预算和设备物理内存。输出是单个 JSON 文档，`can_serve` 表示是否可以启动 pilot；`production_ready` 只有非降级真实模型、production 服务层级和匹配的 evaluator 签名报告同时成立时才为 true。
 
 执行 preflight 加 100 次顺序 ASGI 稳定性采样，并原子写入 JSON：
 
@@ -78,14 +78,15 @@ curl -s -X POST http://127.0.0.1:8001/v1/models/model-v2/activate \
   -d '{
     "reason":"controlled rollout",
     "expected_active_model_id":"model-v1",
-    "expected_active_fingerprint":"<64-lowercase-hex>"
+    "expected_active_fingerprint":"<64-lowercase-hex>",
+    "serving_tier":"pilot"
   }'
 
 curl -s -X POST http://127.0.0.1:8001/v1/models/rollback \
   -H "X-ModelOps-Token: $TOKEN" \
   -H "X-ModelOps-Actor: $ACTOR" \
   -H 'Content-Type: application/json' \
-  -d '{"reason":"rollback after validation alarm","expected_active_model_id":"model-v2"}'
+  -d '{"reason":"rollback after validation alarm","expected_active_model_id":"model-v2","serving_tier":"pilot"}'
 
 curl -s http://127.0.0.1:8001/v1/models/audit?limit=100 \
   -H "X-ModelOps-Token: $TOKEN" \
@@ -93,6 +94,8 @@ curl -s http://127.0.0.1:8001/v1/models/audit?limit=100 \
 ```
 
 错误门禁为：未配置令牌 `MODELOPS_DISABLED`/503、认证失败 `MODELOPS_UNAUTHORIZED`/401、状态或 CAS 冲突 `MODELOPS_CONFLICT`/409。管理令牌头不在开发 CORS allowlist 中，浏览器跨域 UI 不能调用 ModelOps 写接口。
+
+`serving_tier=production` 还要求目标注册项为 `quality_status=pilot_passed`，且 evaluator HMAC 签名及 model/revision/adapter/data/prompt provenance 全部匹配。没有签名时仍可显式选择 `pilot`，但响应与日志持续携带质量状态，不能伪装为 production。完整契约与 LoRA 一键加载探针见 [Phase 6 发布报告](phase6_quality_release_report.md)。
 
 ## Phase 5 真实模型验收
 

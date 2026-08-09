@@ -48,6 +48,17 @@ def main(argv: list[str] | None = None) -> int:
         )
         _print_json(report)
         return 0 if report["status"] == "passed" else 2
+    if args.command == "candidate-probe":
+        from src.observability.candidate_validation import run_lora_candidate_probe
+
+        real_settings = replace(settings, model_mode="real")
+        report = run_lora_candidate_probe(
+            real_settings,
+            sample_path=args.sample,
+            run_manifest_path=args.run_manifest,
+        )
+        _print_json(report)
+        return 0 if report["status"] == "passed" else 2
 
     registry = build_service_registry(settings)
     preflight = run_preflight(settings, registry)
@@ -136,6 +147,20 @@ def _parser() -> argparse.ArgumentParser:
     real_validate.add_argument(
         "--markdown-output",
         default="docs/deployment/phase5_real_runtime_report.md",
+    )
+    candidate_probe = subparsers.add_parser(
+        "candidate-probe",
+        help="load only the configured local LoRA candidate; never downloads or uses mock",
+    )
+    candidate_probe.add_argument(
+        "--sample",
+        default=None,
+        help="optional JPEG/PNG/WebP used for one real pilot analyze probe",
+    )
+    candidate_probe.add_argument(
+        "--run-manifest",
+        default=None,
+        help="optional algorithm training manifest included as bounded blocker evidence",
     )
 
     validate = subparsers.add_parser(

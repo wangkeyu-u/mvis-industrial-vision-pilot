@@ -1,0 +1,36 @@
+dataset_version: ksdd_sft-1.0.0
+source_dataset_version: ksdd-0.1.0
+prompt_version: ksdd_audit_prompt-1.0.0
+format:
+  trainer: mlx-vlm
+  verified_version: 0.6.10
+  dataset_loader: huggingface-datasets
+  required_columns: [images, messages]
+  train_file: hf/train.jsonl
+  validation_file: hf/valid.jsonl
+  test_file: hf/test.jsonl
+prompt_policy:
+  train_variants:
+    - bilingual_audit_direct
+    - bilingual_audit_quality_gate
+    - bilingual_audit_evidence_first
+  valid_variant: bilingual_audit_direct
+  test_variant: bilingual_audit_direct
+  test_prompt_fixed: true
+  augmentation: one_deterministic_variant_per_source_sample
+answer_policy:
+  output: one strict JSON object without Markdown fences
+  positive_result: violation
+  negative_result: compliant
+  negative_objects: []
+  bbox: original-image integer xyxy from frozen mask-derived annotation
+  uncertain: false
+isolation:
+  preserve_source_assignments: true
+  allow_test_derived_training_samples: false
+  allow_entity_cross_split: false
+  allow_near_duplicate_cross_split: false
+acceptance:
+  pilot_only: true
+  formal_kpi_eligible: false
+  reason: source frozen test split has 56 samples; formal KPI floor is 300

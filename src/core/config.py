@@ -26,6 +26,16 @@ class ServiceSettings:
     disconnect_poll_seconds: float = 0.05
     model_mode: str = "auto"
     model_config_path: str = "configs/models/qwen3_vl_2b_mlx_4bit.json"
+    model_weight_hash: str | None = None
+    data_version: str = "ksdd-0.1.0"
+    prompt_version: str = "ksdd_prompt_v1"
+    zero_shot_quality_status: str = "pilot_failed"
+    lora_model_id: str = "qwen3-vl-2b-instruct-4bit-lora-r8"
+    lora_adapter_path: str | None = None
+    lora_data_version: str = "ksdd_sft-1.0.0"
+    lora_load_on_start: bool = True
+    evaluator_attestation_path: str | None = None
+    evaluator_signing_key: str | None = None
     modelops_token: str | None = None
     cors_allowed_origins: tuple[str, ...] = (
         "http://127.0.0.1:8000",
@@ -52,6 +62,20 @@ class ServiceSettings:
             raise ValueError(f"service settings must be positive: {', '.join(invalid)}")
         if self.model_mode not in {"mock", "real", "auto"}:
             raise ValueError("model_mode must be mock, real, or auto")
+        if self.zero_shot_quality_status not in {
+            "unvalidated",
+            "pilot_failed",
+            "pilot_candidate",
+            "pilot_passed",
+        }:
+            raise ValueError("zero_shot_quality_status is invalid")
+        for name, value in {
+            "model_weight_hash": self.model_weight_hash,
+        }.items():
+            if value is not None and (
+                len(value) != 64 or any(character not in "0123456789abcdef" for character in value)
+            ):
+                raise ValueError(f"{name} must be a lowercase SHA-256 digest")
         if any(origin == "*" for origin in self.cors_allowed_origins):
             raise ValueError("wildcard CORS origins are not allowed")
         if self.modelops_token is not None and len(self.modelops_token) < 16:
@@ -114,6 +138,30 @@ class ServiceSettings:
                 "MVIS_MODEL_CONFIG",
                 str(model.get("config_path", defaults.model_config_path)),
             ),
+            model_weight_hash=(
+                os.getenv("MVIS_MODEL_WEIGHT_HASH")
+                or model.get("weight_hash")
+                or defaults.model_weight_hash
+            ),
+            data_version=str(model.get("data_version", defaults.data_version)),
+            prompt_version=str(model.get("prompt_version", defaults.prompt_version)),
+            zero_shot_quality_status=str(
+                model.get("zero_shot_quality_status", defaults.zero_shot_quality_status)
+            ),
+            lora_model_id=str(model.get("lora_model_id", defaults.lora_model_id)),
+            lora_adapter_path=(
+                os.getenv("MVIS_LORA_ADAPTER_PATH")
+                or model.get("lora_adapter_path")
+                or defaults.lora_adapter_path
+            ),
+            lora_data_version=str(model.get("lora_data_version", defaults.lora_data_version)),
+            lora_load_on_start=(
+                os.getenv("MVIS_LORA_LOAD_ON_START", "").strip().lower() in {"1", "true", "yes"}
+                if os.getenv("MVIS_LORA_LOAD_ON_START") is not None
+                else bool(model.get("lora_load_on_start", defaults.lora_load_on_start))
+            ),
+            evaluator_attestation_path=os.getenv("MVIS_EVALUATOR_ATTESTATION"),
+            evaluator_signing_key=os.getenv("MVIS_EVALUATOR_SIGNING_KEY"),
             # Administrative secrets are intentionally environment-only and are
             # never accepted from version-controlled YAML.
             modelops_token=os.getenv("MVIS_MODELOPS_TOKEN"),

@@ -24,6 +24,19 @@ model:
   # mock: deterministic API and stability testing only.
   mode: auto
   config_path: configs/models/qwen3_vl_2b_mlx_4bit.json
+  # Immutable runtime/evaluation provenance. Zero-shot quality failed the
+  # phase-5 probe and is therefore eligible only for an explicitly marked pilot.
+  weight_hash: 4750d95a2162829e127a94e83ac350d498d02070aab216c4687da48804a06ffb
+  data_version: ksdd-0.1.0
+  prompt_version: ksdd_prompt_v1
+  zero_shot_quality_status: pilot_failed
+  # The LoRA path remains null until the algorithm thread emits a local artifact.
+  # Override with MVIS_LORA_ADAPTER_PATH; no download is attempted.
+  lora_model_id: qwen3-vl-2b-instruct-4bit-lora-r8
+  lora_adapter_path: null
+  lora_data_version: ksdd_sft-1.0.0
+  lora_load_on_start: true
+  # MVIS_EVALUATOR_ATTESTATION and MVIS_EVALUATOR_SIGNING_KEY are environment-only.
   # MVIS_MODELOPS_TOKEN is deliberately environment-only and never read here.
 
 cors:

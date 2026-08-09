@@ -1,5 +1,13 @@
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
-const MAX_PACKAGE_FILES = 12;
+const MAX_PACKAGE_FILES = 16;
+
+const pilotMetricTargets = Object.freeze({
+  macro_f1: { minimum: 0.82 },
+  acc_at_iou: { minimum: 0.70 },
+  json_schema_validity_rate: { minimum: 0.99 },
+  hard_negative_false_positive_rate: { maximum: 0.10 },
+  evidence_conclusion_consistency_rate: { minimum: 0.97 },
+});
 
 export const evaluationMetricDefinitions = Object.freeze([
   { key: "macro_f1", label: "Macro-F1", direction: "higher" },
@@ -72,6 +80,13 @@ function normalizeReport(raw) {
   }
   if (!Array.isArray(report.samples) || !Array.isArray(report.failure_cases)) {
     throw new EvaluationImportError("INVALID_REPORT", "samples 和 failure_cases 必须是数组。");
+  }
+  const sampleIds = report.samples.map((sample) => sample?.sample_id);
+  if (sampleIds.some((sampleId) => typeof sampleId !== "string" || !sampleId.trim())) {
+    throw new EvaluationImportError("INVALID_REPORT", "report.samples 中每条记录都必须包含 sample_id。");
+  }
+  if (new Set(sampleIds).size !== sampleIds.length) {
+    throw new EvaluationImportError("DUPLICATE_SAMPLE_ID", "report.samples 含重复 sample_id，不能用于配对比较。");
   }
   objectValue(report.slice_metrics, "slice_metrics");
   return report;
@@ -146,6 +161,129 @@ function mockTruth(manifest, metrics, config) {
   return manifest?.mock_only === true || metrics?.mock_only === true || config?.mock_only === true;
 }
 
+function pilotTruth(manifest, metrics, config, provenance) {
+  return manifest?.pilot_only === true || metrics?.pilot_only === true || config?.pilot_only === true
+    || provenance?.formal_kpi_eligible === false || provenance?.evaluation_status === "pilot";
+}
+
+function stableValue(value) {
+  if (Array.isArray(value)) return value.map(stableValue);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stableValue(value[key])]));
+  }
+  return value;
+}
+
+function evidenceValue(value) {
+  if (value && typeof value === "object" && !Array.isArray(value) && "status" in value && "value" in value) {
+    return value.status === "recorded" ? value.value : null;
+  }
+  return value ?? null;
+}
+
+function findNamedValues(root, names, results = [], seen = new Set()) {
+  if (!root || typeof root !== "object" || seen.has(root)) return results;
+  seen.add(root);
+  for (const [key, raw] of Object.entries(root)) {
+    if (names.has(key)) results.push(evidenceValue(raw));
+    if (raw && typeof raw === "object") findNamedValues(raw, names, results, seen);
+  }
+  return results;
+}
+
+function uniqueTextIdentity(root, names, label) {
+  const values = findNamedValues(root, new Set(names))
+    .filter((value) => typeof value === "string" && value.trim())
+    .map((value) => value.trim());
+  const unique = [...new Set(values)];
+  if (unique.length > 1) {
+    throw new EvaluationImportError("MIXED_RUN_IDENTITY", `${label} 在包内存在多个值，不能作为同一次运行证据。`, unique);
+  }
+  return unique[0] || null;
+}
+
+function firstNumber(root, names) {
+  return findNamedValues(root, new Set(names)).find((value) => typeof value === "number" && Number.isFinite(value)) ?? null;
+}
+
+function promptIdentity(...sources) {
+  const roots = sources.filter((source) => source && typeof source === "object");
+  if (!roots.length) return { identity: null, display: null };
+  const searchable = Object.fromEntries(roots.map((source, index) => [`source_${index}`, source]));
+  const explicit = uniqueTextIdentity(
+    searchable,
+    ["prompt_sha256", "test_prompt_sha256", "prompt_query_sha256", "prompt_hash", "prompt_fingerprint"],
+    "prompt hash",
+  );
+  if (explicit) return { identity: explicit, display: explicit };
+  const prompt = roots.map((source) => source.prompt ?? source.prompt_template ?? source.system_prompt)
+    .find((value) => value != null) ?? null;
+  if (prompt == null) {
+    const version = uniqueTextIdentity(searchable, ["prompt_version", "prompt_id"], "prompt version");
+    return { identity: version, display: version };
+  }
+  const canonical = JSON.stringify(stableValue(prompt));
+  return {
+    identity: canonical,
+    display: typeof prompt === "string" ? prompt : canonical,
+  };
+}
+
+function absolutePilotPass(metric) {
+  const target = pilotMetricTargets[metric.key] || {};
+  return !(typeof target.minimum === "number" && metric.candidate < target.minimum)
+    && !(typeof target.maximum === "number" && metric.candidate > target.maximum);
+}
+
+function normalizeRunEvidence(bundle, report) {
+  const prompt = promptIdentity(bundle.config, bundle.run_manifest, bundle.experiment);
+  const searchable = {
+    config: bundle.config,
+    environment: bundle.environment,
+    run_manifest: bundle.run_manifest,
+    experiment: bundle.experiment,
+    performance: bundle.performance,
+    sample_predictions: report?.samples?.map((sample) => sample?.prediction?.provenance).filter(Boolean),
+  };
+  const directRevision = [
+    bundle.config?.model_revision,
+    bundle.config?.base_model_revision,
+    bundle.config?.checkpoint_revision,
+    bundle.config?.revision,
+    bundle.config?.model?.revision,
+    bundle.config?.run?.base_model_revision,
+    bundle.run_manifest?.model?.revision,
+  ].map(evidenceValue).find((value) => typeof value === "string" && value.trim()) || null;
+  const directAdapterHash = [
+    bundle.config?.adapter_hash,
+    bundle.config?.adapter_sha256,
+    bundle.config?.run?.adapter?.enabled === true ? bundle.config?.run?.adapter?.sha256 : null,
+    bundle.run_manifest?.adapter?.enabled === true ? bundle.run_manifest?.adapter?.sha256 : null,
+    bundle.run_manifest?.model?.adapter_hash,
+    bundle.run_manifest?.model?.adapter_sha256,
+  ].map(evidenceValue).find((value) => typeof value === "string" && value.trim()) || null;
+  return {
+    modelId: uniqueTextIdentity(searchable, ["base_model_id"], "base model id")
+      || uniqueTextIdentity(searchable, ["model_id"], "model id"),
+    modelRevision: uniqueTextIdentity(searchable, ["model_revision", "base_model_revision", "checkpoint_revision"], "model revision")
+      || (typeof directRevision === "string" ? directRevision.trim() : null),
+    adapterHash: uniqueTextIdentity(searchable, ["adapter_hash", "adapter_sha256", "adapter_fingerprint"], "adapter hash")
+      || (typeof directAdapterHash === "string" ? directAdapterHash.trim() : null),
+    promptIdentity: prompt.identity,
+    promptDisplay: prompt.display,
+    runId: uniqueTextIdentity(searchable, ["run_id"], "run id")
+      || uniqueTextIdentity(searchable, ["experiment_id"], "experiment id"),
+    qualityStatus: uniqueTextIdentity(searchable, ["quality_status"], "quality status"),
+    resources: {
+      p50LatencyMs: firstNumber(searchable, ["p50_latency_ms", "latency_p50_ms"]),
+      p95LatencyMs: firstNumber(searchable, ["p95_latency_ms", "latency_p95_ms"]),
+      peakMemoryMb: firstNumber(searchable, ["peak_memory_mb", "process_peak_memory_after_mb", "process_peak_rss_mb", "mlx_peak_allocated_mb"]),
+      processPeakRssMb: firstNumber(searchable, ["process_peak_rss_mb", "process_peak_memory_after_mb"]),
+      mlxPeakAllocatedMb: firstNumber(searchable, ["mlx_peak_allocated_mb"]),
+    },
+  };
+}
+
 function buildPortfolio(bundle, { sourceName = "evaluation.json", verified = false, kind = "package" } = {}) {
   const manifest = bundle.package_manifest ? objectValue(bundle.package_manifest, "package_manifest") : null;
   const metrics = bundle.metrics ? objectValue(bundle.metrics, "metrics") : null;
@@ -156,6 +294,12 @@ function buildPortfolio(bundle, { sourceName = "evaluation.json", verified = fal
   const summary = normalizeSummary(metrics?.summary || report?.summary);
   if (report) {
     const reportSummary = normalizeSummary(report.summary);
+    if (report.samples.length > 0 && report.samples.length !== summary.sample_count) {
+      throw new EvaluationImportError(
+        "SAMPLE_COUNT_MISMATCH",
+        `report.samples 有 ${report.samples.length} 条，但 summary.sample_count=${summary.sample_count}。`,
+      );
+    }
     for (const metric of evaluationMetricDefinitions) {
       if (Math.abs(reportSummary[metric.key] - summary[metric.key]) > 1e-12) {
         throw new EvaluationImportError("METRICS_REPORT_MISMATCH", `metrics 与 report 的 ${metric.key} 不一致。`);
@@ -171,13 +315,16 @@ function buildPortfolio(bundle, { sourceName = "evaluation.json", verified = fal
     ? metrics.confidence_intervals : {};
   const fixtureOnly = fixtureTruth(manifest, metrics, bundle.config);
   const mockOnly = mockTruth(manifest, metrics, bundle.config);
+  const pilotOnly = pilotTruth(manifest, metrics, bundle.config, bundle.data_provenance);
   const acceptance = metrics?.kpi_acceptance && typeof metrics.kpi_acceptance === "object"
     ? metrics.kpi_acceptance : { status: "not_evaluable", eligible_for_model_acceptance: false, assessments: [] };
-  const eligible = verified && !fixtureOnly && !mockOnly && acceptance.eligible_for_model_acceptance === true;
-  const truthState = fixtureOnly ? "fixture" : mockOnly ? "mock" : verified ? "verified" : "unverified";
+  const eligible = verified && !fixtureOnly && !mockOnly && !pilotOnly
+    && acceptance.eligible_for_model_acceptance === true;
+  const truthState = fixtureOnly ? "fixture" : mockOnly ? "mock" : pilotOnly && verified ? "pilot" : verified ? "verified" : "unverified";
   const watermark = fixtureOnly
     ? "FIXTURE / MOCK · 不可用于模型验收"
     : mockOnly ? "MOCK OUTPUT · 不可用于模型验收"
+    : pilotOnly && verified ? `PILOT ONLY · ${summary.sample_count} TEST SAMPLES · 禁止包装为正式 KPI`
     : verified ? null : "UNVERIFIED REPORT · 不可用于模型验收";
   const comparison = evaluationMetricDefinitions.map((definition) => {
     const assessment = assessments.get(definition.key);
@@ -226,6 +373,12 @@ function buildPortfolio(bundle, { sourceName = "evaluation.json", verified = fal
     };
   });
   const failureCases = (report?.failure_cases || []).map(normalizeFailureCase);
+  const runEvidence = normalizeRunEvidence(bundle, report);
+  const declaredPilotStatus = runEvidence.qualityStatus === "pilot_failed" ? "pilot_failed"
+    : ["pilot_candidate", "pilot_passed"].includes(runEvidence.qualityStatus) ? "pilot_candidate" : null;
+  const pilotDisposition = pilotOnly
+    ? declaredPilotStatus || (comparison.every(absolutePilotPass) ? "pilot_candidate" : "pilot_failed")
+    : null;
   return {
     sourceName,
     kind,
@@ -234,12 +387,18 @@ function buildPortfolio(bundle, { sourceName = "evaluation.json", verified = fal
     verified,
     fixtureOnly,
     mockOnly,
+    pilotOnly,
+    pilotDisposition,
     fixtureNotice: manifest?.fixture_notice || metrics?.fixture_notice || null,
     watermark,
     eligibleForModelAcceptance: eligible,
     acceptanceStatus: String(acceptance.status || "not_evaluable"),
     createdAt: manifest?.created_at || null,
     datasetVersion: bundle.data_provenance?.dataset_version || null,
+    dataManifestSha256: typeof bundle.data_provenance?.manifest_sha256 === "string"
+      ? bundle.data_provenance.manifest_sha256 : null,
+    formalKpiEligible: bundle.data_provenance?.formal_kpi_eligible ?? null,
+    formalKpiIneligibilityReason: bundle.data_provenance?.formal_kpi_ineligibility_reason || null,
     frozenTest: bundle.data_provenance?.frozen_test ?? null,
     environment: bundle.environment || null,
     summary,
@@ -250,6 +409,68 @@ function buildPortfolio(bundle, { sourceName = "evaluation.json", verified = fal
     sampleCount: summary.sample_count,
     comparisonStrength: pairedComparison?.conclusion_strength || null,
     comparisonNotice: pairedComparison?.notice || null,
+    sampleIds: (report?.samples || []).map((sample) => sample.sample_id).sort(),
+    ...runEvidence,
+  };
+}
+
+export function compareEvaluationPortfolios(baseline, candidate) {
+  const reasons = [];
+  if (!baseline || !candidate) {
+    reasons.push({ code: "PAIR_INCOMPLETE", message: "请分别导入零样本和 LoRA 的完整评测包。" });
+  } else {
+    for (const [role, portfolio] of [["ZERO_SHOT", baseline], ["LORA", candidate]]) {
+      if (!portfolio.verified) reasons.push({ code: `${role}_PACKAGE_UNVERIFIED`, message: `${role} package 未通过组件 SHA-256。` });
+      if (portfolio.fixtureOnly || portfolio.mockOnly) reasons.push({ code: `${role}_NOT_REAL`, message: `${role} package 是 fixture/mock。` });
+      if (!portfolio.pilotOnly) reasons.push({ code: `${role}_NOT_PILOT`, message: `${role} package 未声明 pilot_only。` });
+      if (!portfolio.dataManifestSha256) reasons.push({ code: `${role}_MANIFEST_MISSING`, message: `${role} package 未记录数据 manifest SHA-256。` });
+      if (!portfolio.sampleIds.length) reasons.push({ code: `${role}_SAMPLE_IDS_MISSING`, message: `${role} report 未记录逐样本 ID。` });
+      if (!portfolio.promptIdentity) reasons.push({ code: `${role}_PROMPT_MISSING`, message: `${role} package 未记录 prompt 身份。` });
+      if (!portfolio.modelRevision) reasons.push({ code: `${role}_REVISION_MISSING`, message: `${role} package 未记录基础模型 revision。` });
+    }
+    if (baseline.dataManifestSha256 && candidate.dataManifestSha256
+      && baseline.dataManifestSha256 !== candidate.dataManifestSha256) {
+      reasons.push({ code: "DATA_MANIFEST_MISMATCH", message: "零样本与 LoRA 使用的数据 manifest 不同，已阻止对比。" });
+    }
+    if (baseline.sampleIds.length && candidate.sampleIds.length) {
+      const left = baseline.sampleIds.join("\n");
+      const right = candidate.sampleIds.join("\n");
+      if (left !== right) reasons.push({ code: "SAMPLE_ID_MISMATCH", message: "零样本与 LoRA 的 sample ID 集合不一致，已阻止对比。" });
+    }
+    if (baseline.promptIdentity && candidate.promptIdentity && baseline.promptIdentity !== candidate.promptIdentity) {
+      reasons.push({ code: "PROMPT_MISMATCH", message: "零样本与 LoRA 的 prompt 不一致，不能归因于 adapter。" });
+    }
+    if (baseline.modelRevision && candidate.modelRevision && baseline.modelRevision !== candidate.modelRevision) {
+      reasons.push({ code: "MODEL_REVISION_MISMATCH", message: "零样本与 LoRA 的基础模型 revision 不一致。" });
+    }
+    if (baseline.adapterHash) reasons.push({ code: "ZERO_SHOT_ADAPTER_PRESENT", message: "零样本包不应包含 adapter hash。" });
+    if (!candidate.adapterHash) reasons.push({ code: "LORA_ADAPTER_HASH_MISSING", message: "LoRA package 未记录 adapter hash。" });
+  }
+  const allowed = reasons.length === 0;
+  const metrics = allowed ? evaluationMetricDefinitions.map((definition) => {
+    const left = baseline.comparison.find((metric) => metric.key === definition.key);
+    const right = candidate.comparison.find((metric) => metric.key === definition.key);
+    return {
+      ...definition,
+      baseline: left.candidate,
+      candidate: right.candidate,
+      delta: right.candidate - left.candidate,
+      baselineInterval: left.interval,
+      candidateInterval: right.interval,
+    };
+  }) : [];
+  const qualityStatus = !baseline && !candidate ? "not_loaded"
+    : !allowed ? "comparison_blocked"
+    : metrics.every((metric) => absolutePilotPass({ key: metric.key, candidate: metric.candidate }))
+      ? "pilot_candidate" : "pilot_failed";
+  return {
+    allowed,
+    reasons,
+    qualityStatus,
+    qualityAccepted: false,
+    formalKpiClaimAllowed: false,
+    pilotSampleCount: allowed ? candidate.sampleCount : null,
+    metrics,
   };
 }
 
@@ -333,6 +554,9 @@ export async function parseEvaluationFiles(fileList) {
     data_provenance: documents.get("data_provenance.json")?.value,
     environment: documents.get("environment.json")?.value,
     comparison: documents.get("comparison.json")?.value,
+    run_manifest: documents.get("run_manifest.json")?.value,
+    experiment: documents.get("experiment.json")?.value,
+    performance: documents.get("performance.json")?.value,
   };
   return buildPortfolio(bundle, {
     sourceName: manifestDocument ? "evaluation-package" : "evaluation-components",

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.mvis/schemas/evaluator-attestation-1.0.0.json",
+  "title": "MVIS evaluator production-gate attestation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "payload", "signature"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_id",
+        "checkpoint_revision",
+        "config_fingerprint",
+        "adapter_hash",
+        "weight_hash",
+        "data_version",
+        "prompt_version",
+        "quality_status",
+        "eligible_for_model_acceptance",
+        "evaluator",
+        "issued_at",
+        "report_sha256"
+      ],
+      "properties": {
+        "model_id": {"type": "string", "minLength": 1},
+        "checkpoint_revision": {"type": "string", "minLength": 1},
+        "config_fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16,64}$"
+        },
+        "adapter_hash": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "weight_hash": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "data_version": {"type": "string", "minLength": 1},
+        "prompt_version": {"type": "string", "minLength": 1},
+        "quality_status": {"const": "pilot_passed"},
+        "eligible_for_model_acceptance": {"const": true},
+        "evaluator": {"type": "string", "minLength": 1},
+        "issued_at": {"type": "string", "format": "date-time"},
+        "report_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "key_id", "value"],
+      "properties": {
+        "algorithm": {"const": "hmac-sha256"},
+        "key_id": {"type": "string", "minLength": 1},
+        "value": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

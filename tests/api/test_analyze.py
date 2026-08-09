@@ -43,7 +43,12 @@ def test_analyze_returns_versioned_schema_and_original_pixel_bbox(client) -> Non
     assert body["model"] == {
         "base": "mock-vlm-0",
         "adapter": "mock-compliance-v0",
+        "revision": "mock-builtin-v0",
     }
+    assert body["provenance"]["checkpoint_revision"] == "mock-builtin-v0"
+    assert body["quality_status"] == "unvalidated"
+    assert body["quality_accepted"] is False
+    assert body["serving_tier"] == "pilot"
     assert body["result"] == "violation"
     assert body["objects"][0]["bbox"] == [8.0, 6.0, 24.0, 18.0]
     assert body["objects"][0]["source"] == "mock"

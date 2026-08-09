@@ -1,0 +1,24 @@
+{
+  "answer_schema_sha256": "517e8b328f9ff120c64ef762f609560b8108be9e9c34b90c102ebb69307ecd79",
+  "created_at": "2026-08-08T23:43:09Z",
+  "dataset_version": "ksdd_sft-1.0.0",
+  "evaluation_ground_truth_sha256": "bd6094421831b8b508e09b7f85d76d59b35781b06cc208e0927b274b6c2adde5",
+  "formal_kpi_eligible": false,
+  "manifest_path": "data/processed/ksdd_sft_v1/sft_manifest.json",
+  "manifest_sha256": "61c69a560c3d5be0c98ebc68f6e45908094e6a1bde7b6d7d07d0a66d08bdbca1",
+  "pilot_only": true,
+  "prompt_version": "ksdd_audit_prompt-1.0.0",
+  "record_schema_sha256": "f4366e0771c9f14979b0554cff886a293a2c85f147fad70852982bec37f79b92",
+  "source_dataset_version": "ksdd-0.1.0",
+  "source_manifest_sha256": "fe9983728d7aa830f11a1369ff1a4eb353be8e8403685a1cf45ea23db128085a",
+  "split_file_sha256": {
+    "test": "6c536189927fd9e487d61252f3922a0be625614374572094e6308dba93a5aada",
+    "train": "5ca5af6c2aec284f909fc55c017414df5ab026e5fa85e3b1a1c3a34884000097",
+    "valid": "3c2c6d487900c5394d571f78debf48c630ecb9a073374ed1eba60b4bc258f888"
+  },
+  "split_counts": {
+    "test": 56,
+    "train": 271,
+    "valid": 56
+  }
+}

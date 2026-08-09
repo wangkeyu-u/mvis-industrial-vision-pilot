@@ -1,0 +1,28 @@
+dataset_version: ksdd_sft-1.0.0
+prompt_version: ksdd_audit_prompt-1.0.0
+ground_truth: data/processed/ksdd_sft_v1/evaluation_ground_truth.jsonl
+data_manifest: data/processed/ksdd_sft_v1/sft_manifest.json
+test_records: data/processed/ksdd_sft_v1/hf/test.jsonl
+fairness:
+  same_sample_ids: required
+  complete_prediction_coverage: required
+  same_base_model_revision: required
+  same_model_config_sha256: required
+  same_prompt_version: required
+  same_test_jsonl_sha256: required
+  same_generation_config: required
+  only_allowed_difference: adapter
+  zero_shot_adapter_enabled: false
+  lora_adapter_enabled: true
+generation:
+  seed: 20260809
+  do_sample: false
+  temperature: 0.0
+  top_p: 1.0
+  max_tokens: 256
+reporting:
+  pilot_only: true
+  bootstrap_resamples: 2000
+  bootstrap_seed: 20260809
+  minimum_reliable_samples: 30
+  no_significance_claim_when_small: true

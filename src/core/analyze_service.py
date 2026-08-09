@@ -126,9 +126,15 @@ class AnalyzeService:
             inference_ms=inference_ms,
             validation_ms=validation_ms,
         )
+        assert registration.provenance is not None
+        assert registration.serving_tier is not None
         response = AnalyzeResponse(
             request_id=request_id,
-            model=registration.adapter.identity,
+            model=registration.identity,
+            provenance=registration.provenance,
+            quality_status=registration.quality_status,
+            quality_accepted=registration.quality_accepted,
+            serving_tier=registration.serving_tier,
             result=output.result,
             objects=output.objects,
             reason=output.reason,
@@ -136,11 +142,31 @@ class AnalyzeService:
             latency_ms=total_ms,
             latency=timing,
             timing=timing,
-            warnings=output.warnings,
+            warnings=list(
+                dict.fromkeys(
+                    [
+                        *output.warnings,
+                        f"quality:{registration.quality_status.value}",
+                        f"serving_tier:{registration.serving_tier.value}",
+                    ]
+                )
+            ),
         )
         log_fields: dict[str, object] = {
             "model_id": registration.model_id,
             "adapter_id": registration.adapter.identity.adapter,
+            "model_revision": registration.provenance.checkpoint_revision,
+            "config_fingerprint": registration.provenance.config_fingerprint,
+            "config_artifact_sha256": registration.provenance.config_artifact_sha256,
+            "model_fingerprint": registration.model_fingerprint,
+            "weight_hash": registration.provenance.weight_hash,
+            "adapter_hash": registration.provenance.adapter_hash,
+            "data_version": registration.provenance.data_version,
+            "prompt_version": registration.provenance.prompt_version,
+            "quality_status": registration.quality_status.value,
+            "quality_accepted": registration.quality_accepted,
+            "serving_tier": registration.serving_tier.value,
+            "production_ready": self.registry.production_ready(),
             "quantization": registration.quantization,
             "task": command.task.value,
             "image_shape": image_meta.log_shape,

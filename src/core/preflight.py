@@ -98,12 +98,27 @@ def run_preflight(
         model_check["status"] = "degraded"
     checks.append(model_check)
 
+    active = registry.active()
+    quality_check = _check(
+        "quality_acceptance",
+        registry.production_ready(),
+        required=False,
+        runtime_ready=model_ready,
+        quality_status=(active.quality_status.value if active else None),
+        quality_accepted=(active.quality_accepted if active else False),
+        serving_tier=(active.serving_tier.value if active and active.serving_tier else None),
+        note="pilot serving is allowed; production requires a matching signed evaluator report",
+    )
+    if model_ready and not registry.production_ready():
+        quality_check["status"] = "degraded"
+    checks.append(quality_check)
+
     required_failures = [item for item in checks if item["required"] and item["status"] == "fail"]
     degraded = any(item["status"] == "degraded" for item in checks)
     can_serve = not required_failures
     production_ready = bool(
         can_serve
-        and not degraded
+        and registry.production_ready()
         and runtime["selected_mode"] == "real"
         and not runtime["degraded"]
     )

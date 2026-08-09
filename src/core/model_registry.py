@@ -23,7 +23,11 @@ from src.core.schemas import (
     ImageMetadata,
     ModelIdentity,
     ModelOutput,
+    ModelProvenance,
     ObjectSource,
+    QualityEvidence,
+    QualityStatus,
+    ServingTier,
 )
 
 
@@ -87,6 +91,10 @@ class ModelRegistration:
     weight_hash: str | None = None
     config_fingerprint: str | None = None
     model_fingerprint: str | None = None
+    provenance: ModelProvenance | None = None
+    quality_status: QualityStatus = QualityStatus.UNVALIDATED
+    quality_evidence: QualityEvidence | None = None
+    serving_tier: ServingTier | None = None
 
     def __post_init__(self) -> None:
         if self.config_fingerprint is None and not self.source.startswith("model-config:"):
@@ -97,6 +105,23 @@ class ModelRegistration:
                     "quantization": self.quantization,
                 }
             )
+        if self.provenance is None:
+            identity = self.adapter.identity
+            self.provenance = ModelProvenance(
+                model_id=identity.base,
+                checkpoint_revision=identity.revision,
+                backend="mock" if self.source == "built-in-test-double" else "unreported-backend",
+                config_fingerprint=self.config_fingerprint or "0" * 64,
+                config_artifact_sha256=self.config_fingerprint,
+                adapter_hash=None,
+                weight_hash=self.weight_hash,
+                data_version="synthetic-contract-v0",
+                prompt_version="mock-contract-v0",
+            )
+        if self.quality_evidence is None:
+            self.quality_evidence = QualityEvidence(failure_reason="attestation_missing")
+        if self.state is ModelState.ACTIVE and self.serving_tier is None:
+            self.serving_tier = ServingTier.PILOT
         if self.model_fingerprint is None:
             self.model_fingerprint = fingerprint_mapping(
                 {
@@ -106,21 +131,47 @@ class ModelRegistration:
                     "quantization": self.quantization,
                     "weight_hash": self.weight_hash,
                     "config_fingerprint": self.config_fingerprint,
+                    "provenance": self.provenance.model_dump(mode="json"),
                 }
             )
 
-    def public_status(self) -> dict[str, str | bool | None]:
+    @property
+    def identity(self) -> ModelIdentity:
+        assert self.provenance is not None
+        return ModelIdentity(
+            base=self.adapter.identity.base,
+            adapter=self.adapter.identity.adapter,
+            revision=self.provenance.checkpoint_revision,
+        )
+
+    @property
+    def quality_accepted(self) -> bool:
+        return bool(
+            self.quality_status is QualityStatus.PILOT_PASSED
+            and self.quality_evidence is not None
+            and self.quality_evidence.signature_verified
+        )
+
+    def public_status(self) -> dict[str, object]:
+        assert self.provenance is not None
         return {
             "model_id": self.model_id,
             "base": self.adapter.identity.base,
             "adapter": self.adapter.identity.adapter,
             "state": self.state.value,
+            "revision": self.provenance.checkpoint_revision,
+            "runtime_ready": self.adapter.ready,
             "ready": self.adapter.ready,
             "source": self.source,
             "quantization": self.quantization,
             "weight_hash": self.weight_hash,
             "config_fingerprint": self.config_fingerprint,
             "model_fingerprint": self.model_fingerprint,
+            "provenance": self.provenance.model_dump(mode="json"),
+            "quality_status": self.quality_status.value,
+            "quality_accepted": self.quality_accepted,
+            "quality_evidence": self.quality_evidence.model_dump(mode="json"),
+            "serving_tier": self.serving_tier.value if self.serving_tier else None,
         }
 
 
@@ -140,6 +191,9 @@ class ModelAuditRecord:
     reason: str
     config_fingerprint: str | None
     model_fingerprint: str | None
+    quality_status: str
+    quality_accepted: bool
+    serving_tier: str | None
 
     def public_status(self) -> dict[str, object]:
         return {
@@ -157,6 +211,9 @@ class ModelAuditRecord:
             "reason": self.reason,
             "config_fingerprint": self.config_fingerprint,
             "model_fingerprint": self.model_fingerprint,
+            "quality_status": self.quality_status,
+            "quality_accepted": self.quality_accepted,
+            "serving_tier": self.serving_tier,
         }
 
 
@@ -200,11 +257,19 @@ class ModelRegistry:
                 raise ValueError(f"model already registered: {registration.model_id}")
             if registration.state is ModelState.ACTIVE and "active" in self._aliases:
                 raise ValueError("only one model may be registered active")
+            if (
+                registration.state is ModelState.ACTIVE
+                and registration.serving_tier is ServingTier.PRODUCTION
+                and not registration.quality_accepted
+            ):
+                raise ValueError(
+                    "production active model requires a matching signed evaluator report"
+                )
             self._models[registration.model_id] = registration
             if registration.state is ModelState.ACTIVE:
                 self._aliases["active"] = registration.model_id
             elif registration.state is ModelState.CANDIDATE:
-                self._aliases["candidate"] = registration.model_id
+                self._aliases.setdefault("candidate", registration.model_id)
             self._record_audit(
                 action="register",
                 actor="system",
@@ -286,6 +351,7 @@ class ModelRegistry:
         reason: str,
         expected_active_model_id: str | None = None,
         expected_active_fingerprint: str | None = None,
+        serving_tier: ServingTier = ServingTier.PILOT,
     ) -> ModelAuditRecord:
         """Atomically promote one validated model and preserve the old active alias."""
 
@@ -294,15 +360,22 @@ class ModelRegistry:
             self._require_transition(registration, ModelState.ACTIVE)
             if not registration.adapter.ready:
                 raise ValueError("validated adapter must be ready before activation")
+            if serving_tier is ServingTier.PRODUCTION and not registration.quality_accepted:
+                raise ValueError(
+                    "production activation requires a matching signed evaluator report"
+                )
             self._check_expected_active(expected_active_model_id, expected_active_fingerprint)
             previous_id = self._aliases.get("active")
             state_snapshot = {key: item.state for key, item in self._models.items()}
+            tier_snapshot = {key: item.serving_tier for key, item in self._models.items()}
             alias_snapshot = dict(self._aliases)
             try:
                 if previous_id and previous_id != model_id:
                     self._models[previous_id].state = ModelState.VALIDATED
+                    self._models[previous_id].serving_tier = None
                     self._aliases["previous"] = previous_id
                 registration.state = ModelState.ACTIVE
+                registration.serving_tier = serving_tier
                 self._aliases["active"] = model_id
                 if self._aliases.get("candidate") == model_id:
                     self._aliases.pop("candidate", None)
@@ -320,6 +393,7 @@ class ModelRegistry:
             except Exception:
                 for key, state in state_snapshot.items():
                     self._models[key].state = state
+                    self._models[key].serving_tier = tier_snapshot[key]
                 self._aliases = alias_snapshot
                 raise
 
@@ -331,6 +405,7 @@ class ModelRegistry:
         reason: str,
         expected_active_model_id: str | None = None,
         expected_active_fingerprint: str | None = None,
+        serving_tier: ServingTier = ServingTier.PILOT,
     ) -> ModelAuditRecord:
         """Atomically reactivate previous and retire the rolled-back active model."""
 
@@ -346,11 +421,16 @@ class ModelRegistry:
                 raise ValueError("previous model must be validated and ready")
             if not previous.config_fingerprint or not previous.model_fingerprint:
                 raise ValueError("previous model fingerprints are required")
+            if serving_tier is ServingTier.PRODUCTION and not previous.quality_accepted:
+                raise ValueError("production rollback requires a matching signed evaluator report")
             state_snapshot = {key: item.state for key, item in self._models.items()}
+            tier_snapshot = {key: item.serving_tier for key, item in self._models.items()}
             alias_snapshot = dict(self._aliases)
             try:
                 current.state = ModelState.RETIRED
+                current.serving_tier = None
                 previous.state = ModelState.ACTIVE
+                previous.serving_tier = serving_tier
                 self._aliases["active"] = previous_id
                 self._aliases["previous"] = current_id
                 if self._aliases.get("candidate") == previous_id:
@@ -369,6 +449,7 @@ class ModelRegistry:
             except Exception:
                 for key, state in state_snapshot.items():
                     self._models[key].state = state
+                    self._models[key].serving_tier = tier_snapshot[key]
                 self._aliases = alias_snapshot
                 raise
 
@@ -387,6 +468,7 @@ class ModelRegistry:
             self._require_transition(registration, ModelState.RETIRED)
             previous_state = registration.state
             registration.state = ModelState.RETIRED
+            registration.serving_tier = None
             for alias, aliased_model in list(self._aliases.items()):
                 if aliased_model == model_id:
                     self._aliases.pop(alias, None)
@@ -457,6 +539,9 @@ class ModelRegistry:
             reason=reason,
             config_fingerprint=registration.config_fingerprint,
             model_fingerprint=registration.model_fingerprint,
+            quality_status=registration.quality_status.value,
+            quality_accepted=registration.quality_accepted,
+            serving_tier=(registration.serving_tier.value if registration.serving_tier else None),
         )
         self._audit.append(record)
         return record
@@ -486,10 +571,22 @@ class ModelRegistry:
         active = self.active()
         return bool(active and active.state is ModelState.ACTIVE and active.adapter.ready)
 
+    def production_ready(self) -> bool:
+        active = self.active()
+        return bool(
+            self.ready()
+            and active is not None
+            and active.serving_tier is ServingTier.PRODUCTION
+            and active.quality_accepted
+        )
+
     def statuses(self) -> dict[str, object]:
         with self._lock:
             return {
                 "runtime": self.runtime_status(),
+                "runtime_ready": self.ready(),
+                "quality_accepted": bool(self.active() and self.active().quality_accepted),
+                "production_ready": self.production_ready(),
                 "aliases": dict(sorted(self._aliases.items())),
                 "models": [self._models[key].public_status() for key in sorted(self._models)],
                 "audit_sequence": self._audit_sequence,
@@ -521,7 +618,11 @@ class MockModelAdapter:
 
     @property
     def identity(self) -> ModelIdentity:
-        return ModelIdentity(base=self.base, adapter=self.adapter_id)
+        return ModelIdentity(
+            base=self.base,
+            adapter=self.adapter_id,
+            revision="mock-builtin-v0",
+        )
 
     @property
     def ready(self) -> bool:
@@ -576,14 +677,32 @@ class MockModelAdapter:
 
 def build_mock_registry(adapter: ModelAdapter | None = None) -> ModelRegistry:
     registry = ModelRegistry()
+    selected_adapter = adapter or MockModelAdapter()
+    config_fingerprint = fingerprint_mapping(
+        {"model": "mock-compliance-v0", "contract": "mock-contract-v0"}
+    )
     registry.register(
         ModelRegistration(
             model_id="mock-compliance-v0",
-            adapter=adapter or MockModelAdapter(),
+            adapter=selected_adapter,
             state=ModelState.ACTIVE,
             source="built-in-test-double",
             quantization="none",
             weight_hash=None,
+            config_fingerprint=config_fingerprint,
+            provenance=ModelProvenance(
+                model_id=selected_adapter.identity.base,
+                checkpoint_revision="mock-builtin-v0",
+                backend="mock",
+                config_fingerprint=config_fingerprint,
+                config_artifact_sha256=config_fingerprint,
+                adapter_hash=None,
+                weight_hash=None,
+                data_version="synthetic-contract-v0",
+                prompt_version="mock-contract-v0",
+            ),
+            quality_status=QualityStatus.UNVALIDATED,
+            serving_tier=ServingTier.PILOT,
         )
     )
     registry.set_runtime_status(

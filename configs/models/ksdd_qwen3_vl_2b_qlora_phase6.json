@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "base_model_id": "Qwen/Qwen3-VL-2B-Instruct",
+  "method": "qlora",
+  "module_strategy": "language_only",
+  "rank": 8,
+  "alpha": 16,
+  "dropout": 0.05,
+  "seed": 20260808,
+  "batch_size": 1,
+  "gradient_accumulation_steps": 16,
+  "max_steps": 100,
+  "learning_rate": 0.0001,
+  "gradient_checkpointing": true,
+  "quantization_bits": 4,
+  "extra": {
+    "profile": "ksdd_phase6_m5_macbook_air_16gb",
+    "max_seq_length": 768,
+    "memory_limit_mb": 12288,
+    "max_wall_minutes": 60,
+    "train_on_completions": true,
+    "dataset_contract_transform": "model_adapter_refusal_code_v1"
+  }
+}

@@ -53,9 +53,15 @@ def _new_request_id() -> str:
 class RequestContextMiddleware:
     """Pure ASGI middleware that does not consume client disconnect events."""
 
-    def __init__(self, app: ASGIApp, logger) -> None:  # type: ignore[no-untyped-def]
+    def __init__(
+        self,
+        app: ASGIApp,
+        logger,  # type: ignore[no-untyped-def]
+        registry: ModelRegistry,
+    ) -> None:
         self.app = app
         self.logger = logger
+        self.registry = registry
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -83,9 +89,29 @@ class RequestContextMiddleware:
         try:
             await self.app(scope, receive, send_with_request_id)
         finally:
+            active = self.registry.active()
+            provenance = active.provenance if active is not None else None
             self.logger.info(
                 "http_request_completed",
                 extra={
+                    "model_id": active.model_id if active else None,
+                    "adapter_id": active.adapter.identity.adapter if active else None,
+                    "model_revision": (provenance.checkpoint_revision if provenance else None),
+                    "config_fingerprint": provenance.config_fingerprint if provenance else None,
+                    "config_artifact_sha256": (
+                        provenance.config_artifact_sha256 if provenance else None
+                    ),
+                    "model_fingerprint": active.model_fingerprint if active else None,
+                    "weight_hash": provenance.weight_hash if provenance else None,
+                    "adapter_hash": provenance.adapter_hash if provenance else None,
+                    "data_version": provenance.data_version if provenance else None,
+                    "prompt_version": provenance.prompt_version if provenance else None,
+                    "quality_status": active.quality_status.value if active else None,
+                    "quality_accepted": active.quality_accepted if active else False,
+                    "serving_tier": (
+                        active.serving_tier.value if active and active.serving_tier else None
+                    ),
+                    "production_ready": self.registry.production_ready(),
                     "status": status_code,
                     "latency": {
                         "http_total_ms": max(0, round((time.perf_counter() - started) * 1000))
@@ -122,12 +148,38 @@ def create_app(
         expose_headers=["X-Request-ID"],
         max_age=600,
     )
-    application.add_middleware(RequestContextMiddleware, logger=logger)
+    application.add_middleware(
+        RequestContextMiddleware,
+        logger=logger,
+        registry=model_registry,
+    )
     application.state.settings = service_settings
     application.state.registry = model_registry
     application.state.analyze_service = AnalyzeService(service_settings, model_registry)
     configured_model = model_registry.active()
     runtime_status = model_registry.runtime_status()
+
+    def model_log_context(registration=None) -> dict[str, object]:  # type: ignore[no-untyped-def]
+        selected = registration or model_registry.active()
+        provenance = selected.provenance if selected is not None else None
+        return {
+            "model_id": selected.model_id if selected else None,
+            "adapter_id": selected.adapter.identity.adapter if selected else None,
+            "model_revision": provenance.checkpoint_revision if provenance else None,
+            "config_fingerprint": provenance.config_fingerprint if provenance else None,
+            "config_artifact_sha256": (provenance.config_artifact_sha256 if provenance else None),
+            "model_fingerprint": selected.model_fingerprint if selected else None,
+            "weight_hash": provenance.weight_hash if provenance else None,
+            "adapter_hash": provenance.adapter_hash if provenance else None,
+            "data_version": provenance.data_version if provenance else None,
+            "prompt_version": provenance.prompt_version if provenance else None,
+            "quality_status": selected.quality_status.value if selected else None,
+            "quality_accepted": selected.quality_accepted if selected else False,
+            "serving_tier": (
+                selected.serving_tier.value if selected and selected.serving_tier else None
+            ),
+        }
+
     should_emit_config_log = (
         os.getenv("MVIS_SUPPRESS_CONFIG_LOG") != "1" if emit_config_log is None else emit_config_log
     )
@@ -135,15 +187,13 @@ def create_app(
         logger.info(
             "service_configured",
             extra={
-                "model_id": configured_model.model_id if configured_model else None,
-                "adapter_id": (
-                    configured_model.adapter.identity.adapter if configured_model else None
-                ),
+                **model_log_context(configured_model),
                 "quantization": (configured_model.quantization if configured_model else None),
                 "runtime_mode": runtime_status["selected_mode"],
                 "degraded": runtime_status["degraded"],
                 "fallback_reason": runtime_status["fallback_reason"],
                 "status": "ready" if model_registry.ready() else "not_ready",
+                "production_ready": model_registry.production_ready(),
                 "memory_peak_mb": peak_memory_mb(),
             },
         )
@@ -155,6 +205,7 @@ def create_app(
         logger.warning(
             "request_failed",
             extra={
+                **model_log_context(),
                 "request_id": request_id,
                 "status": exc.status_code,
                 "error_code": exc.code.value,
@@ -199,6 +250,7 @@ def create_app(
         logger.exception(
             "unhandled_request_error",
             extra={
+                **model_log_context(),
                 "request_id": request_id,
                 "status": 500,
                 "error_code": ErrorCode.INTERNAL_ERROR.value,
@@ -360,8 +412,16 @@ def create_app(
             code=service_settings.code_version,
             api="v1",
             schema_version=SCHEMA_VERSION,
-            model=active.adapter.identity if active else None,
-            runtime=model_registry.runtime_status(),
+            model=active.identity if active else None,
+            provenance=active.provenance if active else None,
+            quality_status=active.quality_status if active else None,
+            quality_accepted=active.quality_accepted if active else False,
+            serving_tier=active.serving_tier if active else None,
+            runtime=model_registry.runtime_status()
+            | {
+                "runtime_ready": model_registry.ready(),
+                "production_ready": model_registry.production_ready(),
+            },
         )
 
     @application.get("/v1/models")
@@ -419,6 +479,7 @@ def create_app(
                     reason=payload.reason,
                     expected_active_model_id=payload.expected_active_model_id,
                     expected_active_fingerprint=payload.expected_active_fingerprint,
+                    serving_tier=payload.serving_tier,
                 )
             elif action == "rollback":
                 audit = model_registry.rollback(
@@ -427,6 +488,7 @@ def create_app(
                     reason=payload.reason,
                     expected_active_model_id=payload.expected_active_model_id,
                     expected_active_fingerprint=payload.expected_active_fingerprint,
+                    serving_tier=payload.serving_tier,
                 )
             elif action == "retire" and model_id is not None:
                 audit = model_registry.retire(
@@ -448,6 +510,7 @@ def create_app(
         logger.info(
             "modelops_lifecycle_changed",
             extra={
+                **model_log_context(model_registry.active()),
                 "request_id": request.state.request_id,
                 "model_id": audit.model_id,
                 "status": 200,

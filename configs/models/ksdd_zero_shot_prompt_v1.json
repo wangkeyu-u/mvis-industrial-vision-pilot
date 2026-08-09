@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "experiment_id": "ksdd_v0_qwen3_vl_2b_zero_shot_prompt_v1",
+  "prompt_id": "ksdd_prompt_v1",
+  "dataset_version": "ksdd-0.1.0",
+  "dataset_manifest_sha256": "fe9983728d7aa830f11a1369ff1a4eb353be8e8403685a1cf45ea23db128085a",
+  "expected_test_samples": 56,
+  "model_config": "configs/models/qwen3_vl_2b_mlx_4bit.json",
+  "model_id": "mlx-community/Qwen3-VL-2B-Instruct-4bit",
+  "model_revision": "9c4f5209e57b31f4b9dfba735de3fb983739c9cc",
+  "query": "Inspect this electrical-commutator surface for a visible production defect. Treat only a localized crack, scratch, void, chip, or irregular dark discontinuity as a defect; regular vertical seams, machining texture, illumination gradients, and border shadows are not defects. If a defect is clearly visible, return violation and one tight pixel-space bbox labeled defect. If no defect is visible, return compliant. If image evidence is genuinely insufficient or ambiguous, return uncertain rather than inventing a box.",
+  "generation": {
+    "seed": 20260808,
+    "do_sample": false,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 256
+  }
+}

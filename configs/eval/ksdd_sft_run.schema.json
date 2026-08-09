@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.mvis/schemas/ksdd-sft-fair-run-1.0.0.json",
+  "title": "KSDD SFT fair prediction run identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "dataset_version",
+    "prompt_version",
+    "test_jsonl_sha256",
+    "base_model_revision",
+    "model_config_sha256",
+    "generation",
+    "adapter"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "dataset_version": {"const": "ksdd_sft-1.0.0"},
+    "prompt_version": {"const": "ksdd_audit_prompt-1.0.0"},
+    "test_jsonl_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "base_model_revision": {"type": "string", "minLength": 7},
+    "model_config_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seed", "do_sample", "temperature", "top_p", "max_tokens"],
+      "properties": {
+        "seed": {"type": "integer"},
+        "do_sample": {"const": false},
+        "temperature": {"const": 0.0},
+        "top_p": {"const": 1.0},
+        "max_tokens": {"type": "integer", "minimum": 1}
+      }
+    },
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "sha256"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}
