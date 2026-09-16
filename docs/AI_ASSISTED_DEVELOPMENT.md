@@ -1,21 +1,11 @@
-# AI-assisted Development
+# AI-assisted development
 
-AI coding tools were used during implementation. Earlier commits and attribution are preserved. Repository history alone cannot establish who made every earlier decision.
+Codex assisted the September 2026 repository review, numerical test setup repair and organization of the existing model reports. Earlier commits and attribution remain available.
 
-## Assistance in this revision
+## Evidence from this revision
 
-The September 2026 evidence audit used Codex for code inspection, implementation drafts, test execution, failure investigation, refactoring suggestions and documentation drafts. Newly authored experiment fixtures are labeled synthetic. Test outputs and committed experiment records are the evidence; generated prose is not evidence by itself.
+- PatchCore localization failures, U-Net results and corrected entity-grouped CV numbers come from the retained historical reports. The review did not rerun training or recreate absent weights.
+- A clean checkout exposed missing numerical dependencies and a test output path that assumed an existing artifacts directory. The [repair record](failures/003-clean-checkout.md) describes the changes and validation.
+- The [experiment index](experiments/baseline.md) separates those historical model results from the 278 passing software tests, 8 skips and 12 passing subtests.
 
-## Technical ownership and acceptance
-
-The developer owns problem definition, architecture choices, experiment acceptance criteria, evaluation methodology, failure interpretation, security review and final implementation decisions. This describes responsibility, not a claim that all historical code or experiments were manually authored. This AI-assisted revision remains subject to the developer's final technical review; running tests does not substitute for that review.
-
-Generated changes are evaluated using the linked tests, reproducible experiments and failure cases. The audit did not fine-tune a model, invent production deployment, rewrite old commits or remove failure results. Missing model/data resources and unverified capabilities are identified in the experiment records.
-
-## Inspectable evidence
-
-- [Engineering decisions](decisions/)
-- [Failures](failures/)
-- [Experiments](experiments/)
-
-Validation methods used in this revision are recorded with commands and scope. Model quality, contract tests and mock workflow checks must not be conflated.
+The developer is responsible for accepting the evaluation protocol and any deployment decision. The documentation does not establish who authored each historical experiment, and `production_ready=false` remains in force.
