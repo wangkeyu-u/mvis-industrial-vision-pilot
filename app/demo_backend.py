@@ -1,4 +1,4 @@
-"""Deterministic FastAPI adapter used by the interview demo.
+"""Deterministic FastAPI adapter used by the local demo.
 
 This module deliberately exercises the production FastAPI request, image
 validation, cancellation, timeout, error and response-schema paths while the
@@ -93,7 +93,7 @@ registry.set_runtime_status(
     requested_mode="demo",
     selected_mode="mock-adapter",
     degraded=True,
-    fallback_reason="deterministic interview demo; no production model loaded",
+    fallback_reason="deterministic local demo; no production model loaded",
 )
 
 app = create_app(registry=registry)

@@ -241,11 +241,11 @@ test("readiness classification distinguishes real, degraded and unavailable trut
   degraded.details.runtime = {
     selected_mode: "mock-adapter",
     degraded: true,
-    fallback_reason: "interview demo",
+    fallback_reason: "local demo",
   };
   degraded.details.models[0].source = "built-in-test-double";
   assert.equal(classifyReadiness(degraded).state, "degraded");
-  assert.equal(classifyReadiness(degraded).detail, "interview demo");
+  assert.equal(classifyReadiness(degraded).detail, "local demo");
   const nonAcceptance = structuredClone(base);
   nonAcceptance.details.runtime.selected_mode = "model-test";
   assert.equal(classifyReadiness(nonAcceptance).state, "degraded");

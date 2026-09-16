@@ -90,7 +90,6 @@ python3 -m json.tool ui/fixtures/evaluation-package.fixture.json >/dev/null
 | P3-03 | 内置演示样本 | 一次点击完成合法 PNG 加载，仍经过客户端校验 | 浏览器通过 |
 | P3-04 | 验收证据导出 | 成功、错误、取消均可导出当前尝试证据；不嵌入图片/查询原文 | 浏览器解析通过 |
 | P3-05 | 陈旧结果防护 | 新请求开始即清空旧框；超时/取消/停服后 result 为 null | 三个浏览器场景通过 |
-| P3-06 | 完整面试路径 | 5–10 分钟脚本区分产品、服务契约和模型证据 | 文档完成 |
 
 第三阶段详细证据见 `docs/qa/phase3_demo_readiness_report.md`；启动说明见 `docs/demo/one_click_demo.md`。
 
@@ -140,9 +139,9 @@ python3 -m json.tool ui/fixtures/evaluation-package.fixture.json >/dev/null
 | P6-09 | 不匹配失败关闭 | manifest/sample ID 任一不一致时隐藏对比并清空可验收 portfolio | 解析器反例通过；真实不匹配包不伪造 |
 | P6-10 | 真实浏览器对比 | 实际导入算法零样本与 LoRA 正式 pilot 包并记录证据 | 阻塞：LoRA smoke `resource_limit_exceeded`，adapter/package 未生成 |
 
-完整状态与真实零样本证据见 `docs/qa/phase6_baseline_lora_report.md`；8–10 分钟路径见 `docs/qa/phase6_interview_script.md`。
+完整状态与真实零样本证据见 `docs/qa/phase6_baseline_lora_report.md`。
 
-## 第七阶段最终面试准入
+## 第七阶段集成验收
 
 | 编号 | 验收项 | 通过标准 | 当前证据 |
 |---|---|---|---|
@@ -157,4 +156,4 @@ python3 -m json.tool ui/fixtures/evaluation-package.fixture.json >/dev/null
 | P7-09 | 响应式/键盘 | 390×844 单列可读，模式选择、主操作和关闭可键盘达 | 浏览器 + UI 契约通过 |
 | P7-10 | 真实在线定位 | 真实 specialist/fused 返回框、heatmap、request_id/revision/耗时 | **阻塞**：specialist/fused `runtime_ready=false`，未伪造截图 |
 
-最终判断见 `docs/qa/phase7_final_acceptance.md`；8–10 分钟路径、亮点、失败复盘和常见追问见 `docs/qa/phase7_interview_script.md`。
+最终判断见 `docs/qa/phase7_final_acceptance.md`。
