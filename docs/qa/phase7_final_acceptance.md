@@ -1,4 +1,4 @@
-# 第七阶段最终面试验收报告
+# 第七阶段集成验收报告
 
 执行日期：2026-08-09
 目标设备：Apple Silicon / 16 GB unified memory
@@ -151,4 +151,4 @@ git diff --check -- ui src/client docs/qa
 5. **LoRA 仍无真实 adapter**：M5/16GB 上的训练 smoke 超资源预算，本阶段选用实际 specialist 包作为候选对比，未冒充 LoRA。
 6. **热力图同源代理待闭环**：FastAPI 已有有界、短期的 heatmap 路由；当前 `app/server.py` 的 GET 代理 allowlist 尚未包含动态 heatmap 路径。
 
-发布判断：**可用于面试演示产品工程、证据治理和失败复盘；不可声称 specialist/fused 真实在线定位或正式模型 KPI 通过。**
+发布判断：**已验证产品工程、证据治理和失败复盘的演示路径；不可声称 specialist/fused 真实在线定位或正式模型 KPI 通过。**
