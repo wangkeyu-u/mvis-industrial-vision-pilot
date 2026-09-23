@@ -1,5 +1,7 @@
 # AI-assisted development
 
+The project owner, Wang Keyu, set the original multimodal pipeline and system framework. The [initial baseline commit](https://github.com/wangkeyu-u/mvis-industrial-vision-pilot/commit/fc646e9c7d) contains the app and data/model/evaluation configuration structure. This statement identifies architectural responsibility; it does not assign individual historical experiment results to a person.
+
 Codex assisted the September 2026 repository review, numerical test setup repair and organization of the existing model reports. Earlier commits and attribution remain available.
 
 ## Evidence from this revision
