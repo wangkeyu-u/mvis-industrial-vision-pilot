@@ -4,7 +4,7 @@
 Historical PatchCore Acc@IoU=0/9 while classification Macro-F1=0.78125.
 
 ## Reproduction
-Use [localization experiment](../experiments/patchcore-localization-failure.md); raw historical artifacts/data are external to Git.
+Use [localization experiment](../experiments/README.md#localization-failure); raw historical artifacts/data are external to Git.
 
 ## Root Cause
 Reported image resizing destroyed elongated scratch geometry; heatmaps concentrated on partial defects.
