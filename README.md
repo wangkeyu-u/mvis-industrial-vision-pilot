@@ -34,7 +34,7 @@ The API supports `vlm_only`, `specialist_only`, and `fused`. In a fused conflict
 
 The historical test participated in route comparison. It is not an independent external holdout. The CV correction reduced Pixel Dice from **0.4525 to 0.2337** and Box F1 from **0.4000 to 0.3016**; the lower results are retained.
 
-Read the chain: [baseline](docs/experiments/baseline.md) → [localization failure](docs/experiments/patchcore-localization-failure.md) → [U-Net repair](docs/experiments/unet-repair.md) → [CV correction](docs/experiments/cross-validation-bias.md).
+Read the chain: [baseline](docs/experiments/README.md#baseline) → [localization failure](docs/experiments/README.md#localization-failure) → [U-Net repair](docs/experiments/README.md#u-net-repair) → [CV correction](docs/experiments/README.md#cv-correction).
 
 ## Engineering decisions and trade-offs
 
@@ -44,7 +44,7 @@ Read the chain: [baseline](docs/experiments/baseline.md) → [localization failu
 
 ## Ablation boundaries
 
-The [route comparison](docs/experiments/ablation.md) changes geometry, supervision and architecture together. It is not a pure component ablation. Current v2 internal CV reports tiled PatchCore Acc@IoU 0.0196 and U-Net 0.7451; no unmeasured causal gain is assigned to individual components.
+The [route comparison](docs/experiments/README.md#route-comparison) changes geometry, supervision and architecture together. It is not a pure component ablation. Current v2 internal CV reports tiled PatchCore Acc@IoU 0.0196 and U-Net 0.7451; no unmeasured causal gain is assigned to individual components.
 
 ## Reproduce
 
